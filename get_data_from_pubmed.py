@@ -59,6 +59,7 @@ def get_data_from_pubmed_xml(file, pmc_list):
         mesh_list = {}
         author_list = []
         chemicals = {}
+        doi = 'None'
         supply_mesh = {}
         medlines = articles.find('MedlineCitation')
         pmid = medlines.find('PMID').text
