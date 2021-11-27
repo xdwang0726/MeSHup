@@ -56,16 +56,20 @@ def get_data_from_pubmed_xml(file, pmc_list):
     dataset = []
     for articles in root.findall('PubmedArticle'):
         data_point = {}
-        mesh_ids = []
-        mesh_major = []
+        mesh_list = {}
+        author_list = []
+        chemicals = {}
+        supply_mesh = {}
         medlines = articles.find('MedlineCitation')
         pmid = medlines.find('PMID').text
         article_info = medlines.find('Article')
-        if 'IndexingMethod' in medlines.attrib or  medlines.find('MeshHeadingList') is None:
+        if 'IndexingMethod' in medlines.attrib or medlines.find('MeshHeadingList') is None:
             continue
         elif article_info.find('ArticleTitle') is None or article_info.find('Abstract') is None:
             continue
         elif medlines.find('MeshHeadingList') is None:
+            continue
+        elif article_info.find('Language').text != 'eng':
             continue
         else:
             title = "".join(article_info.find('ArticleTitle').itertext())
@@ -86,18 +90,55 @@ def get_data_from_pubmed_xml(file, pmc_list):
                     abstract.append("".join(ab.itertext()))
                 abstract = list(filter(None, abstract))
                 abstract = ' '.join(abstract)
+                if article_info.find('AuthorList') is None:
+                    author_list = 'None'
+                else:
+                    for author in article_info.find('AuthorList').findall('Author'):
+                        if author.find('LastName') is None:
+                            name = author.find('CollectiveName').text
+                        else:
+                            last_name = author.find('LastName').text
+                            if author.find('ForeName') is None:
+                                name = last_name
+                            else:
+                                first_name = author.find('ForeName').text
+                                name = first_name + ',' + last_name
+                        author_list.append(name)
+                    if article_info.find('AuthorList').attrib['CompleteYN'] == 'N':
+                        author_list.append('et al.')
                 for mesh in medlines.find('MeshHeadingList').findall('MeshHeading'):
                     m = mesh.find('DescriptorName').attrib['UI']
                     m_name = mesh.find('DescriptorName').text
-                    mesh_ids.append(m)
-                    mesh_major.append(m_name)
+                    mesh_list[m] = m_name
+                for elocation in article_info.findall('ELocationID'):
+                    if elocation.attrib['EIdType'] == 'doi':
+                        doi = article_info.find('ELocationID').text
+                if medlines.find('ChemicalList') is None:
+                    chemicals = 'None'
+                else:
+                    for chem in medlines.find('ChemicalList').findall('Chemical'):
+                        c = chem.find('NameOfSubstance').attrib['UI']
+                        c_name = chem.find('NameOfSubstance').text
+                        chemicals[c] = c_name
+                if medlines.find('SupplMeshList') is None:
+                    supply_mesh = 'None'
+                else:
+                    for supply in medlines.find('SupplMeshList').findall('SupplMeshName'):
+                        if supply.attrib['Type'] in supply_mesh:
+                            supply_mesh[supply.attrib['Type']].append(supply.text)
+                        else:
+                            supply_mesh[supply.attrib['Type']] = []
+                            supply_mesh[supply.attrib['Type']].append(supply.text)
                 data_point['pmid'] = pmid
                 data_point['title'] = title
                 data_point['abstractText'] = abstract
-                data_point["meshMajor"] = mesh_major
-                data_point["meshID"] = mesh_ids
+                data_point["mesh"] = mesh_list
+                data_point['authors'] = author_list
                 data_point['journal'] = journal_name
                 data_point['year'] = year
+                data_point['doi'] = doi
+                data_point['chemicals'] = chemicals
+                data_point['supplMesh'] = supply_mesh
                 dataset.append(data_point)
 
     return dataset
