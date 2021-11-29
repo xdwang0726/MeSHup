@@ -145,54 +145,54 @@ def get_data_from_pubmed_xml(file, pmc_list):
     return dataset
 
 
+def merge_json(file_path):
+
+    results = []
+    for root, dirs, files in os.walk(file_path):
+        for file in tqdm(files):
+            filename, extension = os.path.splitext(file)
+            if extension == '.json':
+                with open(file, 'rb') as infile:
+                    articles = json.load(infile)['articles']
+                    articles = list(filter(None, articles))
+                    results.extend(articles)
+
+    pubmed = {'articles': results}
+    print('number of PMC articles: %d' % len(results))
+    return pubmed
+
+
 def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--path')
     parser.add_argument('--pmids')
-    # parser.add_argument('--save')
-    # parser.add_argument('--save_no_mesh')
-    # parser.add_argument('--pmid_path')
-    # parser.add_argument('--mapping_path')
-    # parser.add_argument('--allMesh')
+    parser.add_argument('--get_pubmed', default=False)
     parser.add_argument('--save_dataset')
-    # parser.add_argument('--save_missed')
 
     args = parser.parse_args()
 
-    pmcs_list = []
-    with open(args.pmids, 'r') as f:
-        for ids in f:
-            pmcs_list.append(ids.strip())
-    print('mannually annoted articles: %d' % len(pmcs_list))
+    if args.get_pubmed:
+        pmcs_list = []
+        with open(args.pmids, 'r') as f:
+            for ids in f:
+                pmcs_list.append(ids.strip())
+        print('mannually annoted articles: %d' % len(pmcs_list))
 
-    data = []
-    for root, dirs, files in os.walk(args.path):
-        for file in tqdm(files):
-            filename, extension = os.path.splitext(file)
-            if extension == '.xml':
-                dataset = get_data_from_pubmed_xml(file, pmcs_list)
-                data.extend(dataset)
-    print('Total number of articles %d' % len(data))
-    pubmed = {'articles': data}
-    # no_mesh_pmid_list = list(set([ids for pmids in no_mesh for ids in pmids]))
-    #
-    # new_pmids = list(set(pmids_list) - set(no_mesh_pmid_list))
-    # print('Total number of articles %d' % len(new_pmids))
-    #
-    # pickle.dump(no_mesh_pmid_list, open(args.save_no_mesh, 'wb'))
-    # #
-    # with open(args.save, 'w') as f:
-    #     for ids in new_pmids:
-    #         f.write('%s\n' % ids)
+        data = []
+        for root, dirs, files in os.walk(args.path):
+            for file in tqdm(files):
+                filename, extension = os.path.splitext(file)
+                if extension == '.xml':
+                    dataset = get_data_from_pubmed_xml(file, pmcs_list)
+                    data.extend(dataset)
+        print('Total number of articles %d' % len(data))
+        pubmed = {'articles': data}
+    else:
+        pubmed = merge_json(args.path)
 
-    # pubmed, missed_ids = get_data(args.pmid_path, args.mapping_path, args.allMesh)
-    #
-    # pubmed = merge_json(args.path)
     with open(args.save_dataset, "w") as outfile:
         json.dump(pubmed, outfile, indent=4)
-
-    #pickle.dump(missed_ids, open(args.save_missed, 'wb'))
 
 
 if __name__ == "__main__":
