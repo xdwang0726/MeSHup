@@ -97,6 +97,8 @@ def get_data_from_pubmed_xml(file_path, mapping):
                 methods = []
                 results = []
                 discuss = []
+                figure_captions = []
+                table_captions = []
                 for passage in document.findall('passage'):
                     for infon in passage.findall('infon'):
                         if infon.attrib['key'] == 'section_type':
@@ -108,13 +110,19 @@ def get_data_from_pubmed_xml(file_path, mapping):
                                 results.append(passage.find('text').text)
                             elif infon.text == 'DISCUSS':
                                 discuss.append(passage.find('text').text)
-                        else:
+                        elif infon.attrib['key'] == 'type':
+                            if infon.text == 'fig_title_caption' or infon.text == 'fig_caption':
+                                figure_captions.append(passage.find('text').text)
+                            if infon.text == 'table_title_caption' or infon.text == 'table_footnote':
+                                table_captions.append(passage.find('text').text)
                             continue
             data_point['pmid'] = pmid
             data_point['INTRO'] = ' '.join(intro)
             data_point['METHODS'] = ' '.join(methods)
             data_point['RESULTS'] = ' '.join(results)
             data_point['DISCUSS'] = ' '.join(discuss)
+            data_point['FIG_CAPTIONS'] = ' '.join(figure_captions)
+            data_point['TABLE_CAPTIONS'] = ' '.join(table_captions)
             dataset.append(data_point)
 
     pubmed = {'articles': dataset}
