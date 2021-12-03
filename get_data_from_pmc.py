@@ -79,55 +79,61 @@ def pmc2pmid(file):
     return mapping_id
 
 
-def get_data_from_pubmed_xml(file_path, mapping):
+def get_data_from_pubmed_xml(file, mapping):
 
-    dataset = []
-    for root, dirs, files in os.walk(file_path):
-        for file in tqdm(files):
-            filename, extension = os.path.splitext(file)
-            if extension == '.xml':
-                tree = ET.parse(file)
-                root = tree.getroot()
-                document = root.find('document')
+    mapping_id = pmc2pmid(mapping)
 
-                pmc = 'PMC' + document.find('id').text
-                pmid = mapping[pmc]
-                data_point = {}
-                intro = []
-                methods = []
-                results = []
-                discuss = []
-                figure_captions = []
-                table_captions = []
-                for passage in document.findall('passage'):
-                    for infon in passage.findall('infon'):
-                        if infon.attrib['key'] == 'section_type':
-                            if infon.text == 'INTRO':
-                                intro.append(passage.find('text').text)
-                            elif infon.text == 'METHODS':
-                                methods.append(passage.find('text').text)
-                            elif infon.text == 'RESULTS':
-                                results.append(passage.find('text').text)
-                            elif infon.text == 'DISCUSS':
-                                discuss.append(passage.find('text').text)
-                        elif infon.attrib['key'] == 'type':
-                            if infon.text == 'fig_title_caption' or infon.text == 'fig_caption':
-                                figure_captions.append(passage.find('text').text)
-                            if infon.text == 'table_title_caption' or infon.text == 'table_footnote':
-                                table_captions.append(passage.find('text').text)
-                            continue
-            data_point['pmid'] = pmid
-            data_point['INTRO'] = ' '.join(intro)
-            data_point['METHODS'] = ' '.join(methods)
-            data_point['RESULTS'] = ' '.join(results)
-            data_point['DISCUSS'] = ' '.join(discuss)
-            data_point['FIG_CAPTIONS'] = ' '.join(figure_captions)
-            data_point['TABLE_CAPTIONS'] = ' '.join(table_captions)
-            dataset.append(data_point)
+    tree = ET.parse(file)
+    root = tree.getroot()
+    document = root.find('document')
 
-    pubmed = {'articles': dataset}
+    pmc = 'PMC' + document.find('id').text
+    pmid = mapping_id[pmc]
+    data_point = {}
+    intro = []
+    methods = []
+    results = []
+    discuss = []
+    figure_captions = []
+    table_captions = []
+    for passage in document.findall('passage'):
+        for infon in passage.findall('infon'):
+            if infon.attrib['key'] == 'section_type':
+                if infon.text == 'INTRO':
+                    if passage.find('text').text.endswith('.'):
+                        intro.append(passage.find('text').text)
+                    else:
+                        intro.append(passage.find('text').text + '.')
+                elif infon.text == 'METHODS':
+                    if passage.find('text').text.endswith('.'):
+                        methods.append(passage.find('text').text)
+                    else:
+                        methods.append(passage.find('text').text + '.')
+                elif infon.text == 'RESULTS':
+                    if passage.find('text').text.endswith('.'):
+                        results.append(passage.find('text').text)
+                    else:
+                        results.append(passage.find('text').text + '.')
+                elif infon.text == 'DISCUSS':
+                    if passage.find('text').text.endswith('.'):
+                        discuss.append(passage.find('text').text)
+                    else:
+                        discuss.append(passage.find('text').text + '.')
+            elif infon.attrib['key'] == 'type':
+                if infon.text == 'fig_title_caption' or infon.text == 'fig_caption':
+                    figure_captions.append(passage.find('text').text)
+                if infon.text == 'table_title_caption' or infon.text == 'table_footnote':
+                    table_captions.append(passage.find('text').text)
+                continue
+    data_point['pmid'] = pmid
+    data_point['INTRO'] = ' '.join(intro)
+    data_point['METHODS'] = ' '.join(methods)
+    data_point['RESULTS'] = ' '.join(results)
+    data_point['DISCUSS'] = ' '.join(discuss)
+    data_point['FIG_CAPTIONS'] = ' '.join(figure_captions)
+    data_point['TABLE_CAPTIONS'] = ' '.join(table_captions)
 
-    return pubmed
+    return data_point
 
 
 def main():
@@ -153,7 +159,15 @@ def main():
     #     pickle.dump(new_pairs, output_file)
 
     # get pmc full text
-    pubmed = get_data_from_pubmed_xml(args.path, args.id_mapping)
+    dataset = []
+    for root, dirs, files in os.walk(args.path):
+        for file in tqdm(files):
+            filename, extension = os.path.splitext(file)
+            if extension == '.xml':
+                data_point = get_data_from_pubmed_xml(file, args.id_mapping)
+                dataset.append(data_point)
+
+    pubmed = {'articles': dataset}
     with open(args.save, "w") as outfile:
         json.dump(pubmed, outfile, indent=4)
 
