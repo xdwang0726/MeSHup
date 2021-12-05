@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# remove unrelated files from the download PMC XML file using pmc filter list
 cd /home/xdwang/scratch/PMC/pmc_xml_2021/1
 
 # Exit if the directory isn't found.
@@ -15,3 +16,18 @@ for i in *; do
         rm "$i"
     fi
 done
+
+# split the filted PMC file into small folers
+cd /home/xdwang/scratch/PMC/pmc_xml/35-40/
+
+n=0
+for i in *
+do
+  if [ $((n+=1)) -gt 5 ]; then
+    n=1
+  fi
+  todir=../35-40-$n
+  [ -d "$todir" ] || mkdir "$todir"
+  mv "$i" "$todir"
+done
+

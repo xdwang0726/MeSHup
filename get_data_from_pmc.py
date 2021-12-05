@@ -79,7 +79,7 @@ def pmc2pmid(file):
     return mapping_id
 
 
-def get_data_from_pubmed_xml(file, mapping):
+def get_data_from_pubmed_xml(file, mapping, pmc_id):
 
     mapping_id = pmc2pmid(mapping)
 
@@ -88,7 +88,10 @@ def get_data_from_pubmed_xml(file, mapping):
     document = root.find('document')
 
     pmc = 'PMC' + document.find('id').text
-    pmid = mapping_id[pmc]
+    try:
+        pmid = mapping_id[pmc]
+    except KeyError:
+        pmid = mapping_id[pmc_id]
     data_point = {}
     intro = []
     methods = []
@@ -164,7 +167,8 @@ def main():
         for file in tqdm(files):
             filename, extension = os.path.splitext(file)
             if extension == '.xml':
-                data_point = get_data_from_pubmed_xml(file, args.id_mapping)
+                pmc_backup = filename[3:].strip()
+                data_point = get_data_from_pubmed_xml(file, args.id_mapping, pmc_backup)
                 dataset.append(data_point)
 
     pubmed = {'articles': dataset}
