@@ -10,7 +10,12 @@ from tqdm import tqdm
 steps to get pmc files:
 1. use the pmid to pmc id mapping to obtain all pmc ids
 2. all pmc XML files are splits by pmc ids, create the file name list according to PMC ids (https://ftp.ncbi.nlm.nih.gov/pub/wilbur/BioC-PMC/)
-3. download each subset and use remove_pmc_file.sh to remove un-related files.
+3. download each subset
+4. for each subset: a. filtered XML file using pmcXX_XX.txt in data/pmc/
+                    b. split the filtered folder as we have a large number of files to extract
+                    c. extract each XML 
+                    d. tar the filtered folder for storage 
+                    e. merge the extracted .json files 
 """
 
 
