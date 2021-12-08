@@ -1,12 +1,8 @@
 import argparse
-import ijson
 import json
 import os
-import pickle
-import urllib.request
 import xml.etree.ElementTree as ET
 
-from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 

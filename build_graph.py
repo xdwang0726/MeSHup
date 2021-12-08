@@ -3,17 +3,11 @@ import os
 import timeit
 
 import dgl
-import ijson
-import numpy as np
-import pandas as pd
 import torch
 from dgl.data.utils import save_graphs
 from torchtext.data.utils import get_tokenizer
 from torchtext.vocab import Vectors
 from tqdm import tqdm
-from transformers import AutoTokenizer
-from transformers import BertModel
-
 
 tokenizer = get_tokenizer('basic_english')
 
