@@ -74,14 +74,10 @@ def build_MeSH_graph(edge_list, nodes, label_embedding):
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--train')
-    parser.add_argument('--threshold', type=float, default=0.2)
     parser.add_argument('--word2vec_path')
     parser.add_argument('--meSH_pair_path')
     parser.add_argument('--mesh_parent_children_path')
-    parser.add_argument('--biobert')
     parser.add_argument('--output')
-    parser.add_argument('--graph_type', type=str)
 
     args = parser.parse_args()
 
