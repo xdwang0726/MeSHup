@@ -31,12 +31,12 @@ def get_edge_and_node_fatures(MeSH_id_pair_file, parent_children_file, vectors):
     print('count number of nodes and get edges of the graph')
     node_count = len(mapping_id)
     print('number of nodes: ', node_count)
-    values = list(mapping_id.values())
+    mesh_id = list(mapping_id.keys())
     edges = []
     with open(parent_children_file, 'r') as f:
         for line in f:
             item = tuple(line.strip().split(" "))
-            index_item = (values.index(item[0]), values.index(item[1]))
+            index_item = (mesh_id.index(item[0]), mesh_id.index(item[1]))
             edges.append(index_item)
     print('number of edges: ', len(edges))
 
