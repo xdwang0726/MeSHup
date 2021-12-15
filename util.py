@@ -42,54 +42,47 @@ def _vocab_iterator(all_text, ngrams=1):
 def _text_iterator(text, labels=None, ngrams=1):
     """ all_text: a list of dictionary, each dictionary: {section: texts, ....}"""
     tokenizer = get_tokenizer('basic_english')
-
     for i, text in enumerate(text):
         title = tokenizer(text['TITLE'])
-        title = text_clean(title)
         abstract = tokenizer(text['ABSTRACT'])
-        abstract = text_clean(abstract)
+        title_abstract = title + abstract
+        title_abstract = text_clean(title_abstract)
+
         intro = tokenizer(text['INTRO'])
         intro = text_clean(intro)
+
         method = tokenizer(text['METHODS'])
         method = text_clean(method)
+
         results = tokenizer(text['RESULTS'])
         results = text_clean(results)
+
         discuss = tokenizer(text['DISCUSS'])
         discuss = text_clean(discuss)
-        fig_cap = tokenizer(text['FIG_CAPTION'])
-        fig_cap = text_clean(fig_cap)
-        table_cap = tokenizer(text['TABLE_CAPTION'])
-        table_cap = text_clean(table_cap)
+
         label = labels[i]
-        yield label, ngrams_iterator(title, ngrams), ngrams_iterator(abstract, ngrams), ngrams_iterator(intro, ngrams), \
-              ngrams_iterator(method, ngrams), ngrams_iterator(results, ngrams), ngrams_iterator(discuss, ngrams), \
-              ngrams_iterator(fig_cap, ngrams), ngrams_iterator(table_cap, ngrams)
+
+        yield label, ngrams_iterator(title_abstract, ngrams), ngrams_iterator(intro, ngrams), ngrams_iterator(method, ngrams), ngrams_iterator(results, ngrams), ngrams_iterator(discuss, ngrams)
 
 
 def _create_data_from_iterator(vocab, iterator, include_unk):
     data = []
     labels = []
     with tqdm(unit_scale=0, unit='lines') as t:
-        for label, title, abstract, intro, method, results, discuss, fig_cap, table_cap in iterator:
+        for label, abstract, intro, method, results, discuss in iterator:
             if include_unk:
-                title_token = torch.tensor([vocab[token] for token in title])
                 abstract_token = torch.tensor([vocab[token] for token in abstract])
                 intro_token = torch.tensor([vocab[token] for token in intro])
                 method_token = torch.tensor([vocab[token] for token in method])
                 results_token = torch.tensor([vocab[token] for token in results])
                 discuss_token = torch.tensor([vocab[token] for token in discuss])
-                fig_token = torch.tensor([vocab[token] for token in fig_cap])
-                table_token = torch.tensor([vocab[token] for token in table])
             else:
-                title_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in title])))
                 abstract_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in abstract])))
                 intro_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in intro])))
                 method_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in method])))
                 results_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in results])))
                 discuss_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in discuss])))
-                fig_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in fig_cap])))
-                table_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in table_cap])))
-            data.append((label, title_token, abstract_token, intro_token, method_token, results_token, discuss_token, fig_token, table_token))
+            data.append((label, abstract_token, intro_token, method_token, results_token, discuss_token))
             labels.extend(label)
             t.update(1)
         return data, list(set(labels))
@@ -128,11 +121,11 @@ class MultiLabelTextClassificationDataset(torch.utils.data.Dataset):
         return self._vocab
 
 
-def _setup_datasets(train_texts, train_labels, test_texts=None, test_labels=None, ngrams=1, vocab=None,
+def _setup_datasets(alltext, train_texts=None, train_labels=None, test_texts=None, test_labels=None, ngrams=1, vocab=None,
                     include_unk=False, is_test=False):
     if vocab is None:
-        logging.info('Building Vocab based on {}'.format(train_texts))
-        vocab = build_vocab_from_iterator(_vocab_iterator(train_texts, ngrams))
+        logging.info('Building Vocab based on {}'.format(alltext))
+        vocab = build_vocab_from_iterator(_vocab_iterator(alltext, ngrams))
     else:
         if not isinstance(vocab, Vocab):
             raise TypeError("Passed vocabulary is not of type Vocab")
@@ -140,7 +133,7 @@ def _setup_datasets(train_texts, train_labels, test_texts=None, test_labels=None
     if is_test:
         logging.info('Creating testing data')
         test_data, test_labels = _create_data_from_iterator(
-            vocab, _text_iterator(test_texts, labels=test_labels,ngrams=ngrams), include_unk)
+            vocab, _text_iterator(test_texts, labels=test_labels, ngrams=ngrams), include_unk)
         logging.info('Total number of labels in training set:'.format(len(train_labels)))
         return MultiLabelTextClassificationDataset(vocab, test_data, test_labels)
     else:
@@ -151,12 +144,12 @@ def _setup_datasets(train_texts, train_labels, test_texts=None, test_labels=None
         return MultiLabelTextClassificationDataset(vocab, train_data, train_labels)
 
 
-def MeSH_indexing(train_texts, train_labels, test_texts, test_labels, is_test):
+def MeSH_indexing(alltexts, train_texts=None, train_labels=None, test_texts=None, test_labels=None, is_test=False):
     """
     Defines MeSH_indexing datasets.
     The label set contains all mesh terms in 2019 version (https://meshb.nlm.nih.gov/treeView)
     """
-    return _setup_datasets(train_texts, train_labels, test_texts, test_labels, ngrams=1, vocab=None, include_unk=False,
+    return _setup_datasets(alltexts, train_texts, train_labels, test_texts, test_labels, ngrams=1, vocab=None, include_unk=False,
                            is_test=is_test)
 
 
