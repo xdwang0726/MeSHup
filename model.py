@@ -71,12 +71,11 @@ class CorNetBlock(nn.Module):
 
 
 class multichannel_GCN(nn.Module):
-    def __init__(self, vocab_size, dropout, ksz, output_size, embedding_dim=200, cornet_dim=1000, n_cornet_blocks=2):
+    def __init__(self, vocab_size, dropout, output_size, embedding_dim=200, cornet_dim=1000, n_cornet_blocks=2):
         super(multichannel_GCN, self).__init__()
 
         self.vocab_size = vocab_size
         self.dropout = dropout
-        self.ksz = ksz
         self.embedding_dim = embedding_dim
 
         self.embedding_layer = nn.Embedding(num_embeddings=self.vocab_size, embedding_dim=embedding_dim)
@@ -96,13 +95,14 @@ class multichannel_GCN(nn.Module):
     def forward(self, abstract, intro, method, results, discuss, g, g_node_feature):
         # get label features
         label_feature = self.gcn(g, g_node_feature)
-        label_feature = torch.cat((label_feature, g_node_feature), dim=1) # torch.Size([29368, 200*2])
+        # label_feature = torch.cat((label_feature, g_node_feature), dim=1) # torch.Size([29368, 200*2])
+        label_feature = label_feature + g_node_feature  # torch.Size([29368, 200])
 
         # get content features
         abstract = self.embedding_layer(abstract.long())
         abstract_conv = self.dconv(abstract)  # (bs, embed_dim, seq_len-ksz+1)
         abstract_atten = torch.softmax(torch.matmul(abstract_conv.transpose(1, 2), label_feature.transpose(0, 1)), dim=1)  # size: (bs, seq_len-ksz+1, 29368)
-        abstract_feature = torch.matmul(abstract_conv, abstract_atten).transpose(1, 2)  # size: (bs, 29368, embed_dim*2)
+        abstract_feature = torch.matmul(abstract_conv, abstract_atten).transpose(1, 2)  # size: (bs, 29368, embed_dim)
 
         intro = self.embedding_layer(intro.long())
         intro_conv = self.dconv(intro)
