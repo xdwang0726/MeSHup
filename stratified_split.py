@@ -1,6 +1,8 @@
+import argparse
 from tqdm import tqdm
 import numpy as np
 import ijson
+import json
 
 
 def stratified_split(path):
@@ -36,7 +38,7 @@ def stratified_split(path):
     dev_set = []
     test_set = []
     for i, obj in enumerate(tqdm(objects)):
-        if obj['pmid'] is not dev and obj['pmid'] is not test:
+        if obj['pmid'] not in dev and obj['pmid'] not in test:
             train_set.append(obj)
         elif obj['pmid'] in dev:
             dev_set.append(obj)
@@ -46,6 +48,34 @@ def stratified_split(path):
     return train_set, dev_set, test_set
 
 
+def main():
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--path')
+    parser.add_argument('--save_train_path')
+    parser.add_argument('--save_dev_path')
+    parser.add_argument('--save_test_path')
+
+    args = parser.parse_args()
+
+    train_set, dev_set, test_set = stratified_split(args.path)
+
+    pubmed_train = {'articles': train_set}
+    pubmed_dev = {'articles': dev_set}
+    pubmed_test = {'articles': test_set}
+
+    with open(args.save_train_path, "w") as outfile:
+        json.dump(pubmed_train, outfile, indent=4)
+
+    with open(args.save_dev_path, "w") as outfile:
+        json.dump(pubmed_dev, outfile, indent=4)
+
+    with open(args.save_test_path, "w") as outfile:
+        json.dump(pubmed_test, outfile, indent=4)
+
+
+if __name__ == "__main__":
+    main()
 
 
 
