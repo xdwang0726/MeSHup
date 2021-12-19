@@ -133,7 +133,7 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
         except AttributeError:
             print(obj["pmid"].strip())
 
-    print("Finish loading test data, number of test", len(test_id))
+    print("Finish loading test data, number of test", len(test_pmid))
 
     print('load and prepare Mesh')
     # read full MeSH ID list
@@ -327,7 +327,7 @@ def main():
 
     parser.add_argument('--num_epochs', type=int, default=20)
     parser.add_argument('--batch_sz', type=int, default=16)
-    parser.add_argument('--num_workers', type=int, default=8)
+    parser.add_argument('--num_workers', type=int, default=3)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--momentum', type=float, default=0.9)
     parser.add_argument('--weight_decay', type=float, default=0)
