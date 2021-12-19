@@ -41,27 +41,30 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     print('Start loading training data')
     logging.info("Start loading training data")
     for i, obj in enumerate(tqdm(objects)):
-        text = {}
-        try:
-            ids = obj["pmid"]
-            title = obj['title'].strip()
-            text['TITLE'] = title
-            abstract = obj['abstractText'].strip()
-            text['ABSTRACT'] = abstract
-            intro = obj['INTRO']
-            text['INTRO'] = intro
-            method = obj['METHODS']
-            text['METHODS'] = method
-            results = obj['RESULTS']
-            text['RESULTS'] = results
-            discuss = obj['DISCUSS']
-            text['DISCUSS'] = discuss
-            mesh_id = list(obj['mesh'].keys())
-            train_pmid.append(ids)
-            train_text.append(text)
-            train_id.append(mesh_id)
-        except AttributeError:
-            print(obj["pmid"].strip())
+        if i <= 100000:
+            text = {}
+            try:
+                ids = obj["pmid"]
+                title = obj['title'].strip()
+                text['TITLE'] = title
+                abstract = obj['abstractText'].strip()
+                text['ABSTRACT'] = abstract
+                intro = obj['INTRO']
+                text['INTRO'] = intro
+                method = obj['METHODS']
+                text['METHODS'] = method
+                results = obj['RESULTS']
+                text['RESULTS'] = results
+                discuss = obj['DISCUSS']
+                text['DISCUSS'] = discuss
+                mesh_id = list(obj['mesh'].keys())
+                train_pmid.append(ids)
+                train_text.append(text)
+                train_id.append(mesh_id)
+            except AttributeError:
+                print(obj["pmid"].strip())
+        else:
+            break
 
     print("Finish loading training data")
 
