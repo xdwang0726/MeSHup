@@ -220,11 +220,13 @@ def generate_batch(batch):
 
 
 def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, criterion, device, num_workers, optimizer,
-          lr_scheduler):
+          lr_scheduler, world_size, rank):
 
-    train_data = DataLoader(train_dataset, batch_size=batch_sz, shuffle=True, collate_fn=generate_batch, num_workers=num_workers, pin_memory=True)
+    train_sampler = DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
+    valid_sampler = DistributedSampler(valid_dataset, num_replicas=world_size, rank=rank)
+    train_data = DataLoader(train_dataset, batch_size=batch_sz, sampler=train_sampler, collate_fn=generate_batch, num_workers=num_workers, pin_memory=True)
 
-    valid_data = DataLoader(valid_dataset, batch_size=batch_sz, shuffle=True, collate_fn=generate_batch, num_workers=num_workers, pin_memory=True)
+    valid_data = DataLoader(valid_dataset, batch_size=batch_sz, sampler=valid_sampler, collate_fn=generate_batch, num_workers=num_workers, pin_memory=True)
 
     print('train', len(train_data.dataset))
     # num_lines = num_epochs * len(train_data)
@@ -339,11 +341,24 @@ def main():
     args = parser.parse_args()
     set_seed(0)
     torch.backends.cudnn.benchmark = True
-    n_gpu = torch.cuda.device_count()  # check if it is multiple gpu
-    print('{} gpu is avaliable'.format(n_gpu))
-    device = torch.device(args.device if torch.cuda.is_available() else "cpu")
-    print('Device:{}'.format(device))
+    ngpus_per_node = torch.cuda.device_count()
+    print('number of gpus per node: %d' % ngpus_per_node)
+    world_size = int(os.environ['SLURM_NTASKS'])
+    local_rank = int(os.environ['SLURM_LOCALID'])
+    rank = int(os.environ.get("SLURM_NODEID")) * ngpus_per_node + int(local_rank)
 
+    available_gpus = list(os.environ.get('CUDA_VISIBLE_DEVICES').replace(',',""))  # check if it is multiple gpu
+    print('available gpus: ', available_gpus)
+    current_device = int(available_gpus[local_rank])
+    torch.cuda.set_device(current_device)
+
+    print('From Rank: {}, ==> Initializing Process Group...'.format(rank))
+    # init the process group
+    dist.init_process_group(backend=args.dist_backend, init_method=args.init_method, world_size=world_size, rank=rank)
+    print("process group ready!")
+
+    print('From Rank: {}, ==> Making model..'.format(rank))
+    # Get dataset and label graph & Load pre-trained embeddings
     num_nodes, mlb, vocab, train_dataset, dev_dataset, test_dataset, vectors, G = \
         prepare_dataset(args.train_path, args.dev_path, args.test_path, args.meSH_pair_path, args.word2vec_path, args.graph)
 
@@ -353,6 +368,8 @@ def main():
     model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
 
     model.cuda()
+    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[current_device], output_device=current_device)
+    print('From Rank: {}, ==> Preparing data..'.format(rank))
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.scheduler_step_sz, gamma=args.lr_gamma)
@@ -365,7 +382,8 @@ def main():
     # training
     print("Start training!")
     model, train_loss, valid_loss = train(train_dataset, dev_dataset, model, mlb, G, args.batch_sz, args.num_epochs,
-                                          criterion, device, args.num_workers, optimizer, lr_scheduler)
+                                          criterion, current_device, args.num_workers, optimizer, lr_scheduler,
+                                          world_size, rank)
     print('Finish training!')
 
     print('save model for inference')
