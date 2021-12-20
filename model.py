@@ -100,8 +100,9 @@ class multichannel_GCN(nn.Module):
         label_feature = label_feature + g_node_feature  # torch.Size([29368, 200])
 
         # get content features
-        abstract = self.embedding_layer(abstract.long())
-        abstract_conv = self.dconv(abstract)  # (bs, embed_dim, seq_len-ksz+1)
+        abstract = self.embedding_layer(abstract.long())  #size: (bs, seq_len, embed_dim)
+        print('embedding', abstract.size())
+        abstract_conv = self.dconv(abstract.permute(0, 2, 1))  # (bs, embed_dim, seq_len-ksz+1)
         abstract_atten = torch.softmax(torch.matmul(abstract_conv.transpose(1, 2), label_feature.transpose(0, 1)), dim=1)  # size: (bs, seq_len-ksz+1, 29368)
         abstract_feature = torch.matmul(abstract_conv, abstract_atten).transpose(1, 2)  # size: (bs, 29368, embed_dim)
 
