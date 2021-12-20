@@ -103,7 +103,7 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     #     except AttributeError:
     #         print(obj["pmid"].strip())
 
-    print("Finish loading dev data, number of development", len(dev_id))
+    # print("Finish loading dev data, number of development", len(dev_id))
 
     # load test data
     # f_t = open(test_data_path, encoding="utf8")
@@ -138,7 +138,7 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     #     except AttributeError:
     #         print(obj["pmid"].strip())
 
-    print("Finish loading test data, number of test", len(test_pmid))
+    # print("Finish loading test data, number of test", len(test_pmid))
 
     print('load and prepare Mesh')
     # read full MeSH ID list
