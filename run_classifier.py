@@ -200,39 +200,33 @@ def generate_batch(batch):
         label = [entry[0] for entry in batch]
         # padding according to the maximum sequence length in batch
         abstract = [entry[1] for entry in batch]
-        print(abstract)
         abstract = convert_text_tokens(abstract)
         print(abstract)
-        abstract_length = torch.Tensor([len(seq) for seq in abstract])
         abstract = pad_sequence(abstract, ksz=3, batch_first=True)
 
         intro = [entry[2] for entry in batch]
         intro = convert_text_tokens(intro)
-        intro_length = torch.Tensor([len(seq) for seq in intro])
         intro = pad_sequence(intro, ksz=3, batch_first=True)
 
         method = [entry[3] for entry in batch]
         method = convert_text_tokens(method)
-        method_length = torch.Tensor([len(seq) for seq in method])
         method = pad_sequence(method, ksz=3, batch_first=True)
 
         results = [entry[4] for entry in batch]
         results = convert_text_tokens(results)
-        results_length = torch.Tensor([len(seq) for seq in results])
         results = pad_sequence(results, ksz=3, batch_first=True)
 
         discuss = [entry[5] for entry in batch]
         discuss = convert_text_tokens(discuss)
-        discuss_length = torch.Tensor([len(seq) for seq in discuss])
         discuss = pad_sequence(discuss, ksz=3, batch_first=True)
 
-        return label, abstract, intro, method, results, discuss, abstract_length, intro_length, method_length, results_length, discuss_length
+        return label, abstract, intro, method, results, discuss
     else:
         print('WARNING: BATCH ERROR!')
 
 
 def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, criterion, device, num_workers, optimizer,
-          lr_scheduler, vocab):
+          lr_scheduler):
 
     train_data = DataLoader(train_dataset, batch_size=batch_sz, shuffle=True, collate_fn=generate_batch,
                             num_workers=num_workers, pin_memory=True)
@@ -253,16 +247,11 @@ def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, cri
     print("Training....")
     for epoch in range(num_epochs):
         model.train()  # prep model for training
-        for i, (label, abstract, intro, method, results, discuss, abstract_length, intro_length, method_length, results_length, discuss_length) in enumerate(train_data):
+        for i, (label, abstract, intro, method, results, discuss) in enumerate(train_data):
             label = torch.from_numpy(mlb.fit_transform(label)).type(torch.float)
             label = label.to(device)
 
-            abstract, abstract_length = abstract.to(device), abstract_length.to(device)
-            intro, intro_length = intro.to(device), intro_length.to(device)
-            method, method_length = method.to(device), method_length.to(device)
-            results, results_length = results.to(device), results_length.to(device)
-            discuss, discuss_length = discuss.to(device), discuss_length.to(device)
-
+            abstract, intro, method, results, discuss = abstract.to(device), intro.to(device), method.to(device), results.to(device), discuss.to(device)
             G, G.ndata['feat'] = G.to(device), G.ndata['feat'].to(device)
 
             output = model(abstract, intro, method, results, discuss, G, G.ndata['feat'])
@@ -281,16 +270,11 @@ def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, cri
 
         with torch.no_grad():
             model.eval()
-            for i, (label, abstract, intro, method, results, discuss, abstract_length, intro_length, method_length, results_length, discuss_length) in enumerate(valid_data):
+            for i, (label, abstract, intro, method, results, discuss) in enumerate(valid_data):
                 label = torch.from_numpy(mlb.fit_transform(label)).type(torch.float)
                 label = label.to(device)
 
-                abstract, abstract_length = abstract.to(device), abstract_length.to(device)
-                intro, intro_length = intro.to(device), intro_length.to(device)
-                method, method_length = method.to(device), method_length.to(device)
-                results, results_length = results.to(device), results_length.to(device)
-                discuss, discuss_length = discuss.to(device), discuss_length.to(device)
-
+                abstract, intro, method, results, discuss = abstract.to(device), intro.to(device), method.to(device), results.to(device), discuss.to(device)
                 G, G.ndata['feat'] = G.to(device), G.ndata['feat'].to(device)
 
                 output = model(abstract, intro, method, results, discuss, G, G.ndata['feat'])
@@ -381,7 +365,7 @@ if __name__ == "__main__":
     print("Start training!")
     def convert_text_tokens(text): return torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in text])))
     model, train_loss, valid_loss = train(train_dataset, dev_dataset, model, mlb, G, args.batch_sz, args.num_epochs,
-                                          criterion, device, args.num_workers, optimizer, lr_scheduler, vocab)
+                                          criterion, device, args.num_workers, optimizer, lr_scheduler)
     print('Finish training!')
 
     print('save model for inference')
