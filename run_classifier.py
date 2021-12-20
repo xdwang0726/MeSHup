@@ -43,7 +43,7 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     print('Start loading training data')
     logging.info("Start loading training data")
     for i, obj in enumerate(tqdm(objects)):
-        if i <= 300000:
+        if i <= 1000:
             text = {}
             try:
                 ids = obj["pmid"]
@@ -174,7 +174,7 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     G = dgl.load_graphs(graph_file)[0][0]
     print('graph', G.ndata['feat'].shape)
 
-    print('prepare dataset `````````and labels graph done!')
+    print('prepare dataset and labels graph done!')
     return len(meshIDs), mlb, vocab, train_dataset, dev_dataset, test_dataset, vectors, G
 
 
@@ -188,17 +188,7 @@ def weight_matrix(vocab, vectors, dim=200):
     return torch.from_numpy(weight_matrix)
 
 
-def convert_text_tokens(vocab, text, include_unk=False):
-
-    if include_unk:
-        token = torch.tensor([vocab[token] for token in text])
-    else:
-        token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in text])))
-
-    return token
-
-
-def generate_batch(batch, vocab):
+def generate_batch(batch):
     """
     Output:
         text: the text entries in the data_batch are packed into a list and
@@ -211,28 +201,28 @@ def generate_batch(batch, vocab):
         # padding according to the maximum sequence length in batch
         abstract = [entry[1] for entry in batch]
         print(abstract)
-        abstract = convert_text_tokens(vocab, abstract)
+        abstract = convert_text_tokens(abstract)
         print(abstract)
         abstract_length = torch.Tensor([len(seq) for seq in abstract])
         abstract = pad_sequence(abstract, ksz=3, batch_first=True)
 
         intro = [entry[2] for entry in batch]
-        intro = convert_text_tokens(vocab, intro)
+        intro = convert_text_tokens(intro)
         intro_length = torch.Tensor([len(seq) for seq in intro])
         intro = pad_sequence(intro, ksz=3, batch_first=True)
 
         method = [entry[3] for entry in batch]
-        method = convert_text_tokens(vocab, method)
+        method = convert_text_tokens(method)
         method_length = torch.Tensor([len(seq) for seq in method])
         method = pad_sequence(method, ksz=3, batch_first=True)
 
         results = [entry[4] for entry in batch]
-        results = convert_text_tokens(vocab, results)
+        results = convert_text_tokens(results)
         results_length = torch.Tensor([len(seq) for seq in results])
         results = pad_sequence(results, ksz=3, batch_first=True)
 
         discuss = [entry[5] for entry in batch]
-        discuss = convert_text_tokens(vocab, discuss)
+        discuss = convert_text_tokens(discuss)
         discuss_length = torch.Tensor([len(seq) for seq in discuss])
         discuss = pad_sequence(discuss, ksz=3, batch_first=True)
 
@@ -244,10 +234,10 @@ def generate_batch(batch, vocab):
 def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, criterion, device, num_workers, optimizer,
           lr_scheduler, vocab):
 
-    train_data = DataLoader(train_dataset, batch_size=batch_sz, shuffle=True, collate_fn=partial(generate_batch, vocab),
+    train_data = DataLoader(train_dataset, batch_size=batch_sz, shuffle=True, collate_fn=generate_batch,
                             num_workers=num_workers, pin_memory=True)
 
-    valid_data = DataLoader(valid_dataset, batch_size=batch_sz, shuffle=True, collate_fn=partial(generate_batch, vocab),
+    valid_data = DataLoader(valid_dataset, batch_size=batch_sz, shuffle=True, collate_fn=generate_batch,
                             num_workers=num_workers, pin_memory=True)
 
     print('train', len(train_data.dataset))
@@ -333,7 +323,7 @@ def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, cri
     return model, avg_train_losses, avg_valid_losses
 
 
-def main():
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--train_path')
     parser.add_argument('--dev_path')
@@ -389,6 +379,7 @@ def main():
 
     # training
     print("Start training!")
+    def convert_text_tokens(text): return torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in text])))
     model, train_loss, valid_loss = train(train_dataset, dev_dataset, model, mlb, G, args.batch_sz, args.num_epochs,
                                           criterion, device, args.num_workers, optimizer, lr_scheduler, vocab)
     print('Finish training!')
@@ -396,6 +387,3 @@ def main():
     print('save model for inference')
     torch.save(model.state_dict(), args.save_model_path)
 
-
-if __name__ == "__main__":
-    main()
