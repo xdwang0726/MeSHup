@@ -43,7 +43,7 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     print('Start loading training data')
     logging.info("Start loading training data")
     for i, obj in enumerate(tqdm(objects)):
-        if i <= 1000:
+        if i <= 10:
             text = {}
             try:
                 ids = obj["pmid"]
@@ -71,72 +71,72 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     print("Finish loading training data")
 
     # load dev data
-    f_dev = open(dev_data_path, encoding="utf8")
-    dev_objects = ijson.items(f_dev, 'articles.item')
-
-    dev_pmid = []
-    dev_text = []
-    dev_id = []
-
-    print('Start loading dev data')
-    logging.info("Start loading training data")
-    for i, obj in enumerate(tqdm(dev_objects)):
-        text = {}
-        try:
-            ids = obj["pmid"]
-            title = obj['title'].strip()
-            text['TITLE'] = title
-            abstract = obj['abstractText'].strip()
-            text['ABSTRACT'] = abstract
-            intro = obj['INTRO']
-            text['INTRO'] = intro
-            method = obj['METHODS']
-            text['METHODS'] = method
-            results = obj['RESULTS']
-            text['RESULTS'] = results
-            discuss = obj['DISCUSS']
-            text['DISCUSS'] = discuss
-            mesh_id = list(obj['mesh'].keys())
-            dev_pmid.append(ids)
-            dev_text.append(text)
-            dev_id.append(mesh_id)
-        except AttributeError:
-            print(obj["pmid"].strip())
+    # f_dev = open(dev_data_path, encoding="utf8")
+    # dev_objects = ijson.items(f_dev, 'articles.item')
+    #
+    # dev_pmid = []
+    # dev_text = []
+    # dev_id = []
+    #
+    # print('Start loading dev data')
+    # logging.info("Start loading training data")
+    # for i, obj in enumerate(tqdm(dev_objects)):
+    #     text = {}
+    #     try:
+    #         ids = obj["pmid"]
+    #         title = obj['title'].strip()
+    #         text['TITLE'] = title
+    #         abstract = obj['abstractText'].strip()
+    #         text['ABSTRACT'] = abstract
+    #         intro = obj['INTRO']
+    #         text['INTRO'] = intro
+    #         method = obj['METHODS']
+    #         text['METHODS'] = method
+    #         results = obj['RESULTS']
+    #         text['RESULTS'] = results
+    #         discuss = obj['DISCUSS']
+    #         text['DISCUSS'] = discuss
+    #         mesh_id = list(obj['mesh'].keys())
+    #         dev_pmid.append(ids)
+    #         dev_text.append(text)
+    #         dev_id.append(mesh_id)
+    #     except AttributeError:
+    #         print(obj["pmid"].strip())
 
     print("Finish loading dev data, number of development", len(dev_id))
 
     # load test data
-    f_t = open(test_data_path, encoding="utf8")
-    test_objects = ijson.items(f_t, 'documents.item')
-
-    test_pmid = []
-    test_text = []
-    test_id = []
-
-    print('Start loading test data')
-    logging.info("Start loading test data")
-    for i, obj in enumerate(tqdm(test_objects)):
-        text = {}
-        try:
-            ids = obj["pmid"]
-            title = obj['title'].strip()
-            text['TITLE'] = title
-            abstract = obj['abstractText'].strip()
-            text['ABSTRACT'] = abstract
-            intro = obj['INTRO']
-            text['INTRO'] = intro
-            method = obj['METHODS']
-            text['METHODS'] = method
-            results = obj['RESULTS']
-            text['RESULTS'] = results
-            discuss = obj['DISCUSS']
-            text['DISCUSS'] = discuss
-            mesh_id = list(obj['mesh'].keys())
-            test_pmid.append(ids)
-            test_text.append(text)
-            test_id.append(mesh_id)
-        except AttributeError:
-            print(obj["pmid"].strip())
+    # f_t = open(test_data_path, encoding="utf8")
+    # test_objects = ijson.items(f_t, 'documents.item')
+    #
+    # test_pmid = []
+    # test_text = []
+    # test_id = []
+    #
+    # print('Start loading test data')
+    # logging.info("Start loading test data")
+    # for i, obj in enumerate(tqdm(test_objects)):
+    #     text = {}
+    #     try:
+    #         ids = obj["pmid"]
+    #         title = obj['title'].strip()
+    #         text['TITLE'] = title
+    #         abstract = obj['abstractText'].strip()
+    #         text['ABSTRACT'] = abstract
+    #         intro = obj['INTRO']
+    #         text['INTRO'] = intro
+    #         method = obj['METHODS']
+    #         text['METHODS'] = method
+    #         results = obj['RESULTS']
+    #         text['RESULTS'] = results
+    #         discuss = obj['DISCUSS']
+    #         text['DISCUSS'] = discuss
+    #         mesh_id = list(obj['mesh'].keys())
+    #         test_pmid.append(ids)
+    #         test_text.append(text)
+    #         test_id.append(mesh_id)
+    #     except AttributeError:
+    #         print(obj["pmid"].strip())
 
     print("Finish loading test data, number of test", len(test_pmid))
 
@@ -160,11 +160,12 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
 
     # Preparing training and test datasets
     print('prepare training and test sets')
-    alltext = train_text + dev_text + test_text
+    # alltext = train_text + dev_text + test_text
+    alltext = train_text
     train_dataset = MeSH_indexing(alltext, train_text, train_id, is_test=False)
-    dev_dataset = MeSH_indexing(alltext, train_texts=dev_text, train_labels=dev_id, is_test=False)
-    test_dataset = MeSH_indexing(alltext, test_texts=test_text, test_labels=test_id, is_test=True)
-
+    # dev_dataset = MeSH_indexing(alltext, train_texts=dev_text, train_labels=dev_id, is_test=False)
+    # test_dataset = MeSH_indexing(alltext, test_texts=test_text, test_labels=test_id, is_test=True)
+    dev_dataset, test_dataset = train_dataset, train_dataset
     # build vocab
     print('building vocab')
     vocab = train_dataset.get_vocab()
@@ -198,10 +199,11 @@ def generate_batch(batch):
     # check if the dataset is multi-channel or not
     if len(batch[0]) == 6:
         label = [entry[0] for entry in batch]
+        print('label', label)
         # padding according to the maximum sequence length in batch
         abstract = [entry[1] for entry in batch]
         abstract = convert_text_tokens(abstract)
-        print(abstract)
+        print('abstract', abstract)
         abstract = pad_sequence(abstract, ksz=3, batch_first=True)
 
         intro = [entry[2] for entry in batch]

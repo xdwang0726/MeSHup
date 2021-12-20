@@ -34,6 +34,7 @@ def _vocab_iterator(all_text, ngrams=1):
 
     for i, text in enumerate(all_text):
         texts_pre_article = ' '.join(text.values())
+        print('vocab', texts_pre_article)
         texts = tokenizer(texts_pre_article)
         texts = text_clean(texts)
         yield ngrams_iterator(texts, ngrams)
@@ -47,9 +48,11 @@ def _text_iterator(text, labels=None, ngrams=1):
         abstract = tokenizer(text['ABSTRACT'])
         title_abstract = title + abstract
         title_abstract = text_clean(title_abstract)
+        print('title', title_abstract)
 
         intro = tokenizer(text['INTRO'])
         intro = text_clean(intro)
+        print('intro', intro)
 
         method = tokenizer(text['METHODS'])
         method = text_clean(method)
@@ -65,13 +68,14 @@ def _text_iterator(text, labels=None, ngrams=1):
         yield label, ngrams_iterator(title_abstract, ngrams), ngrams_iterator(intro, ngrams), ngrams_iterator(method, ngrams), ngrams_iterator(results, ngrams), ngrams_iterator(discuss, ngrams)
 
 
-def _create_data_from_iterator(vocab, iterator, include_unk):
+def _create_data_from_iterator(vocab, iterator):
     data = []
     labels = []
     with tqdm(unit_scale=0, unit='lines') as t:
         for label, abstract, intro, method, results, discuss in iterator:
             # if include_unk:
-            #     abstract_token = torch.tensor([vocab[token] for token in abstract])
+            abstract_token = torch.tensor([vocab[token] for token in abstract])
+            print('abtoken', abstract_token)
             #     intro_token = torch.tensor([vocab[token] for token in intro])
             #     method_token = torch.tensor([vocab[token] for token in method])
             #     results_token = torch.tensor([vocab[token] for token in results])
@@ -132,14 +136,12 @@ def _setup_datasets(alltext, train_texts=None, train_labels=None, test_texts=Non
     print('Vocab has {} entries'.format(len(vocab)))
     if is_test:
         logging.info('Creating testing data')
-        test_data, test_labels = _create_data_from_iterator(
-            vocab, _text_iterator(test_texts, labels=test_labels, ngrams=ngrams), include_unk)
+        test_data, test_labels = _create_data_from_iterator(vocab, _text_iterator(test_texts, labels=test_labels, ngrams=ngrams))
         logging.info('Total number of labels in test set:'.format(len(test_labels)))
         return MultiLabelTextClassificationDataset(vocab, test_data, test_labels)
     else:
         logging.info('Creating training data')
-        train_data, train_labels = _create_data_from_iterator(
-            vocab, _text_iterator(train_texts, labels=train_labels, ngrams=ngrams), include_unk)
+        train_data, train_labels = _create_data_from_iterator(vocab, _text_iterator(train_texts, labels=train_labels, ngrams=ngrams))
         logging.info('Total number of labels in training set:'.format(len(train_labels)))
         return MultiLabelTextClassificationDataset(vocab, train_data, train_labels)
 
