@@ -107,22 +107,22 @@ class multichannel_GCN(nn.Module):
         abstract_feature = torch.matmul(abstract_conv, abstract_atten).transpose(1, 2)  # size: (bs, 29368, embed_dim)
 
         intro = self.embedding_layer(intro.long())
-        intro_conv = self.dconv(intro)
+        intro_conv = self.dconv(intro.permute(0, 2, 1))
         intro_atten = torch.softmax(torch.matmul(intro_conv.transpose(1, 2), label_feature.transpose(0, 1)), dim=1)
         intro_feature = torch.matmul(intro_conv, intro_atten).transpose(1, 2)
 
         method = self.embedding_layer(method.long())
-        method_conv = self.dconv(method)
+        method_conv = self.dconv(method.permute(0, 2, 1))
         method_atten = torch.softmax(torch.matmul(method_conv.transpose(1, 2), label_feature.transpose(0, 1)), dim=1)
         method_feature = torch.matmul(method_conv, method_atten).transpose(1, 2)
 
         results = self.embedding_layer(results.long())
-        results_conv = self.dconv(results)
+        results_conv = self.dconv(results.permute(0, 2, 1))
         results_atten = torch.softmax(torch.matmul(results_conv.transpose(1, 2), label_feature.transpose(0, 1)), dim=1)
         results_feature = torch.matmul(results_conv, results_atten).transpose(1, 2)
 
         discuss = self.embedding_layer(discuss.long())
-        discuss_conv = self.dconv(discuss)
+        discuss_conv = self.dconv(discuss.permute(0, 2, 1))
         discuss_atten = torch.softmax(torch.matmul(discuss_conv.transpose(1, 2), label_feature.transpose(0, 1)), dim=1)
         discuss_feature = torch.matmul(discuss_conv, discuss_atten).transpose(1, 2)
 
