@@ -82,7 +82,7 @@ def _create_data_from_iterator(vocab, iterator, include_unk):
             #     method_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in method])))
             #     results_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in results])))
             #     discuss_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in discuss])))
-            data.append((label, abstract_token, intro_token, method_token, results_token, discuss_token))
+            data.append((label, abstract, intro, method, results, discuss))
             labels.extend(label)
             t.update(1)
         return data, list(set(labels))
