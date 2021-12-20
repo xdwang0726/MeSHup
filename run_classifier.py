@@ -196,7 +196,7 @@ def generate_batch(batch):
         cls: a tensor saving the labels of individual text entries.
     """
     # check if the dataset is multi-channel or not
-    if len(batch[0]) == 5:
+    if len(batch[0]) == 6:
         label = [entry[0] for entry in batch]
         # padding according to the maximum sequence length in batch
         abstract = [entry[1] for entry in batch]
