@@ -16,10 +16,11 @@ from tqdm import tqdm
 
 from model import multichannel_GCN
 from pytorchtools import EarlyStopping
-from util import MeSH_indexing, pad_sequence
+from util import MeSH_indexing, pad_sequence, text_clean
 from torchtext.vocab import Vocab
-from functools import partial
-
+from torchtext.data.utils import get_tokenizer
+from torchtext.data.utils import ngrams_iterator
+from torchtext.vocab import build_vocab_from_iterator
 
 def set_seed(seed):
     os.environ['PYTHONHASHSEED'] = str(seed)
@@ -28,6 +29,17 @@ def set_seed(seed):
     torch.manual_seed(seed)  # cpu
     torch.cuda.manual_seed(seed)  # gpu
     torch.backends.cudnn.deterministic = True  # cudnn
+
+
+def _vocab_iterator(all_text, ngrams=1):
+
+    tokenizer = get_tokenizer('basic_english')
+
+    for i, text in enumerate(all_text):
+        texts_pre_article = ' '.join(text.values())
+        texts = tokenizer(texts_pre_article)
+        texts = text_clean(texts)
+        yield ngrams_iterator(texts, ngrams)
 
 
 def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair_file, word2vec_path, graph_file):
@@ -166,10 +178,10 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     # dev_dataset = MeSH_indexing(alltext, train_texts=dev_text, train_labels=dev_id, is_test=False)
     # test_dataset = MeSH_indexing(alltext, test_texts=test_text, test_labels=test_id, is_test=True)
     dev_dataset, test_dataset = train_dataset, train_dataset
-    # build vocab
-    print('building vocab')
-    vocab = train_dataset.get_vocab()
 
+    print('building vocab')
+    vocab = build_vocab_from_iterator(_vocab_iterator(alltext, ngrams=1), specials=["<unk>"])
+    vocab.set_default_index(vocab["<unk>"])
     # Prepare label features
     print('Load graph')
     G = dgl.load_graphs(graph_file)[0][0]
