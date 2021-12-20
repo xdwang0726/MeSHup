@@ -43,7 +43,7 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     print('Start loading training data')
     logging.info("Start loading training data")
     for i, obj in enumerate(tqdm(objects)):
-        if i <= 100000:
+        if i <= 1000000:
             text = {}
             try:
                 ids = obj["pmid"]
@@ -346,6 +346,7 @@ def main():
     parser.add_argument('--device', default='cuda', type=str)
     parser.add_argument('--embedding_dim', type=int, default=200)
     parser.add_argument('--dropout', type=float, default=0.2)
+    parser.add_argument('--ksz', default=3)
 
     parser.add_argument('--num_epochs', type=int, default=20)
     parser.add_argument('--batch_sz', type=int, default=16)
@@ -373,7 +374,7 @@ def main():
 
     vocab_size = len(vocab)
 
-    model = multichannel_GCN(vocab_size, args.dropout, num_nodes)
+    model = multichannel_GCN(vocab_size, args.dropout, args.ksz, num_nodes)
     model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
 
     model.cuda()

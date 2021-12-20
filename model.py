@@ -71,11 +71,12 @@ class CorNetBlock(nn.Module):
 
 
 class multichannel_GCN(nn.Module):
-    def __init__(self, vocab_size, dropout, output_size, embedding_dim=200, cornet_dim=1000, n_cornet_blocks=2):
+    def __init__(self, vocab_size, dropout, ksz, output_size, embedding_dim=200, cornet_dim=1000, n_cornet_blocks=2):
         super(multichannel_GCN, self).__init__()
 
         self.vocab_size = vocab_size
         self.dropout = dropout
+        self.ksz = ksz
         self.embedding_dim = embedding_dim
 
         self.embedding_layer = nn.Embedding(num_embeddings=self.vocab_size, embedding_dim=embedding_dim)
