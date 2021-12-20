@@ -56,7 +56,7 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     print('Start loading training data')
     logging.info("Start loading training data")
     for i, obj in enumerate(tqdm(objects)):
-        if i <= 200000:
+        if i <= 2000:
             text = {}
             try:
                 ids = obj["pmid"]
