@@ -17,6 +17,8 @@ from tqdm import tqdm
 from model import multichannel_GCN
 from pytorchtools import EarlyStopping
 from util import MeSH_indexing, pad_sequence
+from torchtext.vocab import Vocab
+from functools import partial
 
 
 def set_seed(seed):
@@ -186,7 +188,17 @@ def weight_matrix(vocab, vectors, dim=200):
     return torch.from_numpy(weight_matrix)
 
 
-def generate_batch(batch):
+def convert_text_tokens(vocab, text, include_unk=False):
+
+    if include_unk:
+        token = torch.tensor([vocab[token] for token in text])
+    else:
+        token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in text])))
+
+    return token
+
+
+def generate_batch(batch, vocab):
     """
     Output:
         text: the text entries in the data_batch are packed into a list and
@@ -198,22 +210,29 @@ def generate_batch(batch):
         label = [entry[0] for entry in batch]
         # padding according to the maximum sequence length in batch
         abstract = [entry[1] for entry in batch]
+        print(abstract)
+        abstract = convert_text_tokens(vocab, abstract)
+        print(abstract)
         abstract_length = torch.Tensor([len(seq) for seq in abstract])
         abstract = pad_sequence(abstract, ksz=3, batch_first=True)
 
         intro = [entry[2] for entry in batch]
+        intro = convert_text_tokens(vocab, intro)
         intro_length = torch.Tensor([len(seq) for seq in intro])
         intro = pad_sequence(intro, ksz=3, batch_first=True)
 
         method = [entry[3] for entry in batch]
+        method = convert_text_tokens(vocab, method)
         method_length = torch.Tensor([len(seq) for seq in method])
         method = pad_sequence(method, ksz=3, batch_first=True)
 
         results = [entry[4] for entry in batch]
+        results = convert_text_tokens(vocab, results)
         results_length = torch.Tensor([len(seq) for seq in results])
         results = pad_sequence(results, ksz=3, batch_first=True)
 
         discuss = [entry[5] for entry in batch]
+        discuss = convert_text_tokens(vocab, discuss)
         discuss_length = torch.Tensor([len(seq) for seq in discuss])
         discuss = pad_sequence(discuss, ksz=3, batch_first=True)
 
@@ -223,11 +242,13 @@ def generate_batch(batch):
 
 
 def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, criterion, device, num_workers, optimizer,
-          lr_scheduler):
+          lr_scheduler, vocab):
 
-    train_data = DataLoader(train_dataset, batch_size=batch_sz, shuffle=True, collate_fn=generate_batch, num_workers=num_workers, pin_memory=True)
+    train_data = DataLoader(train_dataset, batch_size=batch_sz, shuffle=True, collate_fn=partial(generate_batch, vocab),
+                            num_workers=num_workers, pin_memory=True)
 
-    valid_data = DataLoader(valid_dataset, batch_size=batch_sz, shuffle=True, collate_fn=generate_batch, num_workers=num_workers, pin_memory=True)
+    valid_data = DataLoader(valid_dataset, batch_size=batch_sz, shuffle=True, collate_fn=partial(generate_batch, vocab),
+                            num_workers=num_workers, pin_memory=True)
 
     print('train', len(train_data.dataset))
     # num_lines = num_epochs * len(train_data)
@@ -368,7 +389,7 @@ def main():
     # training
     print("Start training!")
     model, train_loss, valid_loss = train(train_dataset, dev_dataset, model, mlb, G, args.batch_sz, args.num_epochs,
-                                          criterion, device, args.num_workers, optimizer, lr_scheduler)
+                                          criterion, device, args.num_workers, optimizer, lr_scheduler, vocab)
     print('Finish training!')
 
     print('save model for inference')

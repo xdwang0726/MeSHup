@@ -70,18 +70,18 @@ def _create_data_from_iterator(vocab, iterator, include_unk):
     labels = []
     with tqdm(unit_scale=0, unit='lines') as t:
         for label, abstract, intro, method, results, discuss in iterator:
-            if include_unk:
-                abstract_token = torch.tensor([vocab[token] for token in abstract])
-                intro_token = torch.tensor([vocab[token] for token in intro])
-                method_token = torch.tensor([vocab[token] for token in method])
-                results_token = torch.tensor([vocab[token] for token in results])
-                discuss_token = torch.tensor([vocab[token] for token in discuss])
-            else:
-                abstract_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in abstract])))
-                intro_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in intro])))
-                method_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in method])))
-                results_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in results])))
-                discuss_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in discuss])))
+            # if include_unk:
+            #     abstract_token = torch.tensor([vocab[token] for token in abstract])
+            #     intro_token = torch.tensor([vocab[token] for token in intro])
+            #     method_token = torch.tensor([vocab[token] for token in method])
+            #     results_token = torch.tensor([vocab[token] for token in results])
+            #     discuss_token = torch.tensor([vocab[token] for token in discuss])
+            # else:
+            #     abstract_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in abstract])))
+            #     intro_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in intro])))
+            #     method_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in method])))
+            #     results_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in results])))
+            #     discuss_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in discuss])))
             data.append((label, abstract_token, intro_token, method_token, results_token, discuss_token))
             labels.extend(label)
             t.update(1)
@@ -134,7 +134,7 @@ def _setup_datasets(alltext, train_texts=None, train_labels=None, test_texts=Non
         logging.info('Creating testing data')
         test_data, test_labels = _create_data_from_iterator(
             vocab, _text_iterator(test_texts, labels=test_labels, ngrams=ngrams), include_unk)
-        logging.info('Total number of labels in training set:'.format(len(train_labels)))
+        logging.info('Total number of labels in test set:'.format(len(test_labels)))
         return MultiLabelTextClassificationDataset(vocab, test_data, test_labels)
     else:
         logging.info('Creating training data')
