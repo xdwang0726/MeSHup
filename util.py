@@ -65,25 +65,26 @@ def _text_iterator(text, labels=None, ngrams=1):
         yield label, ngrams_iterator(title_abstract, ngrams), ngrams_iterator(intro, ngrams), ngrams_iterator(method, ngrams), ngrams_iterator(results, ngrams), ngrams_iterator(discuss, ngrams)
 
 
-def _create_data_from_iterator(vocab, iterator, include_unk=False):
+def _create_data_from_iterator(iterator, include_unk=False):
     data = []
     labels = []
     with tqdm(unit_scale=0, unit='lines') as t:
         for label, abstract, intro, method, results, discuss in iterator:
-            if include_unk:
-                abstract_token = torch.tensor([vocab[token] for token in abstract])
-                print('abtoken', abstract_token)
-                intro_token = torch.tensor([vocab[token] for token in intro])
-                method_token = torch.tensor([vocab[token] for token in method])
-                results_token = torch.tensor([vocab[token] for token in results])
-                discuss_token = torch.tensor([vocab[token] for token in discuss])
-            else:
-                abstract_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in abstract])))
-                intro_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in intro])))
-                method_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in method])))
-                results_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in results])))
-                discuss_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in discuss])))
-            data.append((label, abstract_token, intro_token, method_token, results_token, discuss_token, ))
+            # if include_unk:
+            #     abstract_token = torch.tensor([vocab[token] for token in abstract])
+            #     print('abtoken', abstract_token)
+            #     intro_token = torch.tensor([vocab[token] for token in intro])
+            #     method_token = torch.tensor([vocab[token] for token in method])
+            #     results_token = torch.tensor([vocab[token] for token in results])
+            #     discuss_token = torch.tensor([vocab[token] for token in discuss])
+            # else:
+            #     abstract_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in abstract])))
+            #     intro_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in intro])))
+            #     method_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in method])))
+            #     results_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in results])))
+            #     discuss_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in discuss])))
+            # data.append((label, abstract_token, intro_token, method_token, results_token, discuss_token))
+            data.append((label, abstract, intro, method, results, discuss))
             labels.extend(label)
             t.update(1)
         return data, list(set(labels))
@@ -101,7 +102,7 @@ class MultiLabelTextClassificationDataset(torch.utils.data.Dataset):
                  {label1, label2}
         """
         super(MultiLabelTextClassificationDataset, self).__init__()
-        self._vocab = vocab
+        # self._vocab = vocab
         self._data = data
         self._labels = labels
 
@@ -118,28 +119,28 @@ class MultiLabelTextClassificationDataset(torch.utils.data.Dataset):
     def get_labels(self):
         return self._labels
 
-    def get_vocab(self):
-        return self._vocab
+    # def get_vocab(self):
+    #     return self._vocab
 
 
 def _setup_datasets(alltext, train_texts=None, train_labels=None, test_texts=None, test_labels=None, ngrams=1, vocab=None,
                     include_unk=False, is_test=False):
-    if vocab is None:
-        logging.info('Building Vocab based on {}'.format(alltext))
-        vocab = build_vocab_from_iterator(_vocab_iterator(alltext, ngrams))
-    else:
-        if not isinstance(vocab, Vocab):
-            raise TypeError("Passed vocabulary is not of type Vocab")
-    print('Vocab has {} entries'.format(len(vocab)))
+    # if vocab is None:
+    #     logging.info('Building Vocab based on {}'.format(alltext))
+    #     vocab = build_vocab_from_iterator(_vocab_iterator(alltext, ngrams))
+    # else:
+    #     if not isinstance(vocab, Vocab):
+    #         raise TypeError("Passed vocabulary is not of type Vocab")
+    # print('Vocab has {} entries'.format(len(vocab)))
     if is_test:
         logging.info('Creating testing data')
-        test_data, test_labels = _create_data_from_iterator(vocab, _text_iterator(test_texts, labels=test_labels, ngrams=ngrams),
+        test_data, test_labels = _create_data_from_iterator(_text_iterator(test_texts, labels=test_labels, ngrams=ngrams),
                                                             include_unk)
         logging.info('Total number of labels in test set:'.format(len(test_labels)))
         return MultiLabelTextClassificationDataset(vocab, test_data, test_labels)
     else:
         logging.info('Creating training data')
-        train_data, train_labels = _create_data_from_iterator(vocab, _text_iterator(train_texts, labels=train_labels, ngrams=ngrams),
+        train_data, train_labels = _create_data_from_iterator(_text_iterator(train_texts, labels=train_labels, ngrams=ngrams),
                                                               include_unk)
         logging.info('Total number of labels in training set:'.format(len(train_labels)))
         return MultiLabelTextClassificationDataset(vocab, train_data, train_labels)

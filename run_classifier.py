@@ -22,6 +22,7 @@ from torchtext.data.utils import get_tokenizer
 from torchtext.data.utils import ngrams_iterator
 from torchtext.vocab import build_vocab_from_iterator
 
+
 def set_seed(seed):
     os.environ['PYTHONHASHSEED'] = str(seed)
     random.seed(seed)
@@ -55,7 +56,7 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     print('Start loading training data')
     logging.info("Start loading training data")
     for i, obj in enumerate(tqdm(objects)):
-        if i <= 10:
+        if i <= 200000:
             text = {}
             try:
                 ids = obj["pmid"]
@@ -180,7 +181,8 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     dev_dataset, test_dataset = train_dataset, train_dataset
 
     print('building vocab')
-    vocab = train_dataset.get_vocab()
+    # vocab = train_dataset.get_vocab()
+    vocab =build_vocab_from_iterator(_vocab_iterator(alltext, ngrams=1))
     # Prepare label features
     print('Load graph')
     G = dgl.load_graphs(graph_file)[0][0]
@@ -200,6 +202,44 @@ def weight_matrix(vocab, vectors, dim=200):
     return torch.from_numpy(weight_matrix)
 
 
+# def generate_batch(batch):
+#     """
+#     Output:
+#         text: the text entries in the data_batch are packed into a list and
+#             concatenated as a single tensor for the input of nn.EmbeddingBag.
+#         cls: a tensor saving the labels of individual text entries.
+#     """
+#     # check if the dataset is multi-channel or not
+#     if len(batch[0]) == 6:
+#         label = [entry[0] for entry in batch]
+#         print('label', label)
+#         # padding according to the maximum sequence length in batch
+#         abstract = [entry[1] for entry in batch]
+#         # abstract = convert_text_tokens(abstract)
+#         print('abstract', abstract)
+#         abstract = pad_sequence(abstract, ksz=3, batch_first=True)
+#
+#         intro = [entry[2] for entry in batch]
+#         # intro = convert_text_tokens(intro)
+#         intro = pad_sequence(intro, ksz=3, batch_first=True)
+#
+#         method = [entry[3] for entry in batch]
+#         # method = convert_text_tokens(method)
+#         method = pad_sequence(method, ksz=3, batch_first=True)
+#
+#         results = [entry[4] for entry in batch]
+#         # results = convert_text_tokens(results)
+#         results = pad_sequence(results, ksz=3, batch_first=True)
+#
+#         discuss = [entry[5] for entry in batch]
+#         # discuss = convert_text_tokens(discuss)
+#         discuss = pad_sequence(discuss, ksz=3, batch_first=True)
+#
+#         return label, abstract, intro, method, results, discuss
+#     else:
+#         print('WARNING: BATCH ERROR!')
+
+
 def generate_batch(batch):
     """
     Output:
@@ -207,35 +247,30 @@ def generate_batch(batch):
             concatenated as a single tensor for the input of nn.EmbeddingBag.
         cls: a tensor saving the labels of individual text entries.
     """
-    # check if the dataset is multi-channel or not
-    if len(batch[0]) == 6:
-        label = [entry[0] for entry in batch]
-        print('label', label)
-        # padding according to the maximum sequence length in batch
-        abstract = [entry[1] for entry in batch]
-        # abstract = convert_text_tokens(abstract)
-        print('abstract', abstract)
+    label_list, abstract_batch, intro_batch, method_batch, results_batch, discuss_batch = [], [], [], [], [], []
+    for label, abstract, intro, method, results, discuss in batch:
+        abstract = torch.tensor(convert_text_tokens(abstract))
         abstract = pad_sequence(abstract, ksz=3, batch_first=True)
 
-        intro = [entry[2] for entry in batch]
-        # intro = convert_text_tokens(intro)
+        intro = torch.tensor(convert_text_tokens(intro))
         intro = pad_sequence(intro, ksz=3, batch_first=True)
 
-        method = [entry[3] for entry in batch]
-        # method = convert_text_tokens(method)
+        method = torch.tensor(convert_text_tokens(method))
         method = pad_sequence(method, ksz=3, batch_first=True)
 
-        results = [entry[4] for entry in batch]
-        # results = convert_text_tokens(results)
+        results = torch.tensor(convert_text_tokens(results))
         results = pad_sequence(results, ksz=3, batch_first=True)
 
-        discuss = [entry[5] for entry in batch]
-        # discuss = convert_text_tokens(discuss)
+        discuss = torch.tensor(convert_text_tokens(discuss))
         discuss = pad_sequence(discuss, ksz=3, batch_first=True)
-
-        return label, abstract, intro, method, results, discuss
-    else:
-        print('WARNING: BATCH ERROR!')
+    label_list.append(label)
+    abstract_batch.append(abstract)
+    print('abstract', abstract_batch)
+    intro_batch.append(intro)
+    method_batch.append(method)
+    results_batch.append(results)
+    discuss_batch.append(discuss)
+    return label_list, abstract_batch, intro_batch, method_batch, results_batch, discuss_batch
 
 
 def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, criterion, device, num_workers, optimizer,
@@ -376,7 +411,7 @@ if __name__ == "__main__":
 
     # training
     print("Start training!")
-    def convert_text_tokens(text): return torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in text])))
+    def convert_text_tokens(text): return [vocab[token] for token in text]
     model, train_loss, valid_loss = train(train_dataset, dev_dataset, model, mlb, G, args.batch_sz, args.num_epochs,
                                           criterion, device, args.num_workers, optimizer, lr_scheduler)
     print('Finish training!')
