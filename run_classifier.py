@@ -180,8 +180,8 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     dev_dataset, test_dataset = train_dataset, train_dataset
 
     print('building vocab')
-    vocab = build_vocab_from_iterator(_vocab_iterator(alltext, ngrams=1), specials=["<unk>"])
-    vocab.set_default_index(vocab["<unk>"])
+    vocab = build_vocab_from_iterator(_vocab_iterator(alltext, ngrams=1))
+    # vocab.set_default_index(vocab["<unk>"])
     # Prepare label features
     print('Load graph')
     G = dgl.load_graphs(graph_file)[0][0]
