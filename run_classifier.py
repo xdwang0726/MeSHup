@@ -180,8 +180,7 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     dev_dataset, test_dataset = train_dataset, train_dataset
 
     print('building vocab')
-    vocab = build_vocab_from_iterator(_vocab_iterator(alltext, ngrams=1))
-    # vocab.set_default_index(vocab["<unk>"])
+    vocab = train_dataset.get_vocab()
     # Prepare label features
     print('Load graph')
     G = dgl.load_graphs(graph_file)[0][0]
@@ -214,24 +213,24 @@ def generate_batch(batch):
         print('label', label)
         # padding according to the maximum sequence length in batch
         abstract = [entry[1] for entry in batch]
-        abstract = convert_text_tokens(abstract)
+        # abstract = convert_text_tokens(abstract)
         print('abstract', abstract)
         abstract = pad_sequence(abstract, ksz=3, batch_first=True)
 
         intro = [entry[2] for entry in batch]
-        intro = convert_text_tokens(intro)
+        # intro = convert_text_tokens(intro)
         intro = pad_sequence(intro, ksz=3, batch_first=True)
 
         method = [entry[3] for entry in batch]
-        method = convert_text_tokens(method)
+        # method = convert_text_tokens(method)
         method = pad_sequence(method, ksz=3, batch_first=True)
 
         results = [entry[4] for entry in batch]
-        results = convert_text_tokens(results)
+        # results = convert_text_tokens(results)
         results = pad_sequence(results, ksz=3, batch_first=True)
 
         discuss = [entry[5] for entry in batch]
-        discuss = convert_text_tokens(discuss)
+        # discuss = convert_text_tokens(discuss)
         discuss = pad_sequence(discuss, ksz=3, batch_first=True)
 
         return label, abstract, intro, method, results, discuss
