@@ -113,13 +113,13 @@ class MultiLabelTextClassificationDataset(torch.utils.data.Dataset):
 
 def _setup_datasets(alltext, train_texts=None, train_labels=None, test_texts=None, test_labels=None, ngrams=1, vocab=None,
                     include_unk=False, is_test=False):
-    if vocab is None:
-        logging.info('Building Vocab based on {}'.format(alltext))
-        # vocab = build_vocab_from_iterator(_vocab_iterator(alltext, ngrams))
-    else:
-        if not isinstance(vocab, Vocab):
-            raise TypeError("Passed vocabulary is not of type Vocab")
-    print('Vocab has {} entries'.format(len(vocab)))
+    # if vocab is None:
+    #     logging.info('Building Vocab based on {}'.format(alltext))
+    #     # vocab = build_vocab_from_iterator(_vocab_iterator(alltext, ngrams))
+    # else:
+    #     if not isinstance(vocab, Vocab):
+    #         raise TypeError("Passed vocabulary is not of type Vocab")
+    # print('Vocab has {} entries'.format(len(vocab)))
     if is_test:
         logging.info('Creating testing data')
         test_data, test_labels = _create_data_from_iterator(_text_iterator(test_texts, labels=test_labels, ngrams=ngrams))
