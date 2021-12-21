@@ -56,7 +56,7 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     print('Start loading training data')
     logging.info("Start loading training data")
     for i, obj in enumerate(tqdm(objects)):
-        if i <= 2000:
+        if i <= 20:
             text = {}
             try:
                 ids = obj["pmid"]
@@ -255,9 +255,10 @@ def generate_batch(batch):
         results = torch.tensor(convert_text_tokens(results))
         discuss = torch.tensor(convert_text_tokens(discuss))
     label_list.append(label)
+    print(label_list)
     abstract_batch.append(abstract)
+    print(abstract_batch)
     abstract_batch = pad_sequence(abstract_batch, ksz=3, batch_first=True)
-    print('abstract', abstract_batch)
     intro_batch.append(intro)
     intro_batch = pad_sequence(intro_batch, ksz=3, batch_first=True)
     method_batch.append(method)
