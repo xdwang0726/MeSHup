@@ -71,8 +71,8 @@ def _create_data_from_iterator(iterator, include_unk=False):
     with tqdm(unit_scale=0, unit='lines') as t:
         for label, abstract, intro, method, results, discuss in iterator:
             # if include_unk:
-            #     abstract_token = torch.tensor([vocab[token] for token in abstract])
-            #     print('abtoken', abstract_token)
+            abstract_token = torch.tensor([token for token in abstract])
+            print('abtoken', abstract_token)
             #     intro_token = torch.tensor([vocab[token] for token in intro])
             #     method_token = torch.tensor([vocab[token] for token in method])
             #     results_token = torch.tensor([vocab[token] for token in results])
@@ -84,7 +84,7 @@ def _create_data_from_iterator(iterator, include_unk=False):
             #     results_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in results])))
             #     discuss_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in discuss])))
             # data.append((label, abstract_token, intro_token, method_token, results_token, discuss_token))
-            data.append((label, abstract, intro, method, results, discuss))
+            data.append((label, abstract_token, intro, method, results, discuss))
             labels.extend(label)
             t.update(1)
         return data, list(set(labels))
