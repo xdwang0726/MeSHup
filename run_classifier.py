@@ -250,26 +250,22 @@ def generate_batch(batch):
     label_list, abstract_batch, intro_batch, method_batch, results_batch, discuss_batch = [], [], [], [], [], []
     for label, abstract, intro, method, results, discuss in batch:
         abstract = torch.tensor(convert_text_tokens(abstract))
-        abstract = pad_sequence(abstract, ksz=3, batch_first=True)
-
         intro = torch.tensor(convert_text_tokens(intro))
-        intro = pad_sequence(intro, ksz=3, batch_first=True)
-
         method = torch.tensor(convert_text_tokens(method))
-        method = pad_sequence(method, ksz=3, batch_first=True)
-
         results = torch.tensor(convert_text_tokens(results))
-        results = pad_sequence(results, ksz=3, batch_first=True)
-
         discuss = torch.tensor(convert_text_tokens(discuss))
-        discuss = pad_sequence(discuss, ksz=3, batch_first=True)
     label_list.append(label)
     abstract_batch.append(abstract)
+    abstract_batch = pad_sequence(abstract_batch, ksz=3, batch_first=True)
     print('abstract', abstract_batch)
     intro_batch.append(intro)
+    intro_batch = pad_sequence(intro_batch, ksz=3, batch_first=True)
     method_batch.append(method)
+    method_batch = pad_sequence(method_batch, ksz=3, batch_first=True)
     results_batch.append(results)
+    results_batch = pad_sequence(results_batch, ksz=3, batch_first=True)
     discuss_batch.append(discuss)
+    discuss_batch = pad_sequence(discuss_batch, ksz=3, batch_first=True)
     return label_list, abstract_batch, intro_batch, method_batch, results_batch, discuss_batch
 
 
