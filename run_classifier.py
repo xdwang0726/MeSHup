@@ -56,30 +56,27 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     print('Start loading training data')
     logging.info("Start loading training data")
     for i, obj in enumerate(tqdm(objects)):
-        if i <= 20:
-            text = {}
-            try:
-                ids = obj["pmid"]
-                title = obj['title'].strip()
-                text['TITLE'] = title
-                abstract = obj['abstractText'].strip()
-                text['ABSTRACT'] = abstract
-                intro = obj['INTRO']
-                text['INTRO'] = intro
-                method = obj['METHODS']
-                text['METHODS'] = method
-                results = obj['RESULTS']
-                text['RESULTS'] = results
-                discuss = obj['DISCUSS']
-                text['DISCUSS'] = discuss
-                mesh_id = list(obj['mesh'].keys())
-                train_pmid.append(ids)
-                train_text.append(text)
-                train_id.append(mesh_id)
-            except AttributeError:
-                print(obj["pmid"].strip())
-        else:
-            break
+        text = {}
+        try:
+            ids = obj["pmid"]
+            title = obj['title'].strip()
+            text['TITLE'] = title
+            abstract = obj['abstractText'].strip()
+            text['ABSTRACT'] = abstract
+            intro = obj['INTRO']
+            text['INTRO'] = intro
+            method = obj['METHODS']
+            text['METHODS'] = method
+            results = obj['RESULTS']
+            text['RESULTS'] = results
+            discuss = obj['DISCUSS']
+            text['DISCUSS'] = discuss
+            mesh_id = list(obj['mesh'].keys())
+            train_pmid.append(ids)
+            train_text.append(text)
+            train_id.append(mesh_id)
+        except AttributeError:
+            print(obj["pmid"].strip())
 
     print("Finish loading training data")
 
@@ -175,10 +172,10 @@ def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair
     print('prepare training and test sets')
     # alltext = train_text + dev_text + test_text
     alltext = train_text
-    train_dataset = MeSH_indexing(alltext, train_text, train_id, is_test=False)
+    train_dataset = MeSH_indexing(alltext, train_text[:200000], train_id[:200000], is_test=False)
     # dev_dataset = MeSH_indexing(alltext, train_texts=dev_text, train_labels=dev_id, is_test=False)
     # test_dataset = MeSH_indexing(alltext, test_texts=test_text, test_labels=test_id, is_test=True)
-    dev_dataset, test_dataset = train_dataset, train_dataset
+    dev_dataset, test_dataset = None, None
 
     print('building vocab')
     # vocab = train_dataset.get_vocab()
@@ -202,44 +199,6 @@ def weight_matrix(vocab, vectors, dim=200):
     return torch.from_numpy(weight_matrix)
 
 
-# def generate_batch(batch):
-#     """
-#     Output:
-#         text: the text entries in the data_batch are packed into a list and
-#             concatenated as a single tensor for the input of nn.EmbeddingBag.
-#         cls: a tensor saving the labels of individual text entries.
-#     """
-#     # check if the dataset is multi-channel or not
-#     if len(batch[0]) == 6:
-#         label = [entry[0] for entry in batch]
-#         print('label', label)
-#         # padding according to the maximum sequence length in batch
-#         abstract = [entry[1] for entry in batch]
-#         # abstract = convert_text_tokens(abstract)
-#         print('abstract', abstract)
-#         abstract = pad_sequence(abstract, ksz=3, batch_first=True)
-#
-#         intro = [entry[2] for entry in batch]
-#         # intro = convert_text_tokens(intro)
-#         intro = pad_sequence(intro, ksz=3, batch_first=True)
-#
-#         method = [entry[3] for entry in batch]
-#         # method = convert_text_tokens(method)
-#         method = pad_sequence(method, ksz=3, batch_first=True)
-#
-#         results = [entry[4] for entry in batch]
-#         # results = convert_text_tokens(results)
-#         results = pad_sequence(results, ksz=3, batch_first=True)
-#
-#         discuss = [entry[5] for entry in batch]
-#         # discuss = convert_text_tokens(discuss)
-#         discuss = pad_sequence(discuss, ksz=3, batch_first=True)
-#
-#         return label, abstract, intro, method, results, discuss
-#     else:
-#         print('WARNING: BATCH ERROR!')
-
-
 def generate_batch(batch):
     """
     Output:
@@ -247,27 +206,65 @@ def generate_batch(batch):
             concatenated as a single tensor for the input of nn.EmbeddingBag.
         cls: a tensor saving the labels of individual text entries.
     """
-    label_list, abstract_batch, intro_batch, method_batch, results_batch, discuss_batch = [], [], [], [], [], []
-    for label, abstract, intro, method, results, discuss in batch:
-        abstract = torch.tensor(convert_text_tokens(abstract))
-        intro = torch.tensor(convert_text_tokens(intro))
-        method = torch.tensor(convert_text_tokens(method))
-        results = torch.tensor(convert_text_tokens(results))
-        discuss = torch.tensor(convert_text_tokens(discuss))
-    label_list.append(label)
-    print(label_list)
-    abstract_batch.append(abstract)
-    print(abstract_batch)
-    abstract_batch = pad_sequence(abstract_batch, ksz=3, batch_first=True)
-    intro_batch.append(intro)
-    intro_batch = pad_sequence(intro_batch, ksz=3, batch_first=True)
-    method_batch.append(method)
-    method_batch = pad_sequence(method_batch, ksz=3, batch_first=True)
-    results_batch.append(results)
-    results_batch = pad_sequence(results_batch, ksz=3, batch_first=True)
-    discuss_batch.append(discuss)
-    discuss_batch = pad_sequence(discuss_batch, ksz=3, batch_first=True)
-    return label_list, abstract_batch, intro_batch, method_batch, results_batch, discuss_batch
+    # check if the dataset is multi-channel or not
+    if len(batch[0]) == 6:
+        label = [entry[0] for entry in batch]
+        print('label', label)
+        # padding according to the maximum sequence length in batch
+        abstract = [entry[1] for entry in batch]
+        # abstract = convert_text_tokens(abstract)
+        print('abstract', abstract)
+        abstract = pad_sequence(abstract, ksz=3, batch_first=True)
+
+        intro = [entry[2] for entry in batch]
+        # intro = convert_text_tokens(intro)
+        intro = pad_sequence(intro, ksz=3, batch_first=True)
+
+        method = [entry[3] for entry in batch]
+        # method = convert_text_tokens(method)
+        method = pad_sequence(method, ksz=3, batch_first=True)
+
+        results = [entry[4] for entry in batch]
+        # results = convert_text_tokens(results)
+        results = pad_sequence(results, ksz=3, batch_first=True)
+
+        discuss = [entry[5] for entry in batch]
+        # discuss = convert_text_tokens(discuss)
+        discuss = pad_sequence(discuss, ksz=3, batch_first=True)
+
+        return label, abstract, intro, method, results, discuss
+    else:
+        print('WARNING: BATCH ERROR!')
+
+
+# def generate_batch(batch):
+#     """
+#     Output:
+#         text: the text entries in the data_batch are packed into a list and
+#             concatenated as a single tensor for the input of nn.EmbeddingBag.
+#         cls: a tensor saving the labels of individual text entries.
+#     """
+#     label_list, abstract_batch, intro_batch, method_batch, results_batch, discuss_batch = [], [], [], [], [], []
+#     for label, abstract, intro, method, results, discuss in batch:
+#         abstract = torch.tensor(convert_text_tokens(abstract))
+#         intro = torch.tensor(convert_text_tokens(intro))
+#         method = torch.tensor(convert_text_tokens(method))
+#         results = torch.tensor(convert_text_tokens(results))
+#         discuss = torch.tensor(convert_text_tokens(discuss))
+#     label_list.append(label)
+#     print(label_list)
+#     abstract_batch.append(abstract)
+#     print(abstract_batch)
+#     abstract_batch = pad_sequence(abstract_batch, ksz=3, batch_first=True)
+#     intro_batch.append(intro)
+#     intro_batch = pad_sequence(intro_batch, ksz=3, batch_first=True)
+#     method_batch.append(method)
+#     method_batch = pad_sequence(method_batch, ksz=3, batch_first=True)
+#     results_batch.append(results)
+#     results_batch = pad_sequence(results_batch, ksz=3, batch_first=True)
+#     discuss_batch.append(discuss)
+#     discuss_batch = pad_sequence(discuss_batch, ksz=3, batch_first=True)
+#     return label_list, abstract_batch, intro_batch, method_batch, results_batch, discuss_batch
 
 
 def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, criterion, device, num_workers, optimizer,
