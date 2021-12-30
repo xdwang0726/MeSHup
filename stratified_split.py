@@ -7,11 +7,27 @@ import pandas as pd
 
 
 def json2csv(in_file, out_file):
-    with open(in_file, encoding='utf-8') as json_file:
-        data = json.load(json_file)
-    articles = data['articles']
+    f = open(in_file, encoding="utf8")
+    objects = ijson.items(f, 'articles.item')
+    articles = []
+    mesh = []
+    for i, obj in enumerate(tqdm(objects)):
+        doc = {}
+        doc["pmid"] = obj["pmid"]
+        title = obj['title'].strip()
+        abstract = obj['abstractText'].strip()
+        doc["title_abstract"] = title + ' ' + abstract
+        doc['INTRO'] = obj['INTRO']
+        doc['METHODS'] = obj['METHODS']
+        doc['RESULTS'] = obj['RESULTS']
+        doc['DISCUSS'] = obj['DISCUSS']
+        mesh_id = list(obj['mesh'].keys())
+        articles.append(doc)
+        mesh.append(mesh_id)
+
     df = pd.DataFrame(articles)
-    df.to_csv(out_file)
+    df['mesh'] = pd.Series(mesh)
+    df.to_csv(out_file, index=False)
 
 
 def stratified_split(path):
