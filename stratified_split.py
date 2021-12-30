@@ -3,6 +3,15 @@ from tqdm import tqdm
 import numpy as np
 import ijson
 import json
+import pandas as pd
+
+
+def json2csv(in_file, out_file):
+    with open(in_file, encoding='utf-8') as json_file:
+        data = json.load(json_file)
+    articles = data['articles']
+    df = pd.DataFrame(articles)
+    df.to_csv(out_file)
 
 
 def stratified_split(path):
@@ -20,8 +29,8 @@ def stratified_split(path):
     split = {}
     for key, value in year.items():
         split[key] = {}
-        split_1 = int(np.floor(0.96 * len(value)))
-        split_2 = int(np.floor(0.98 * len(value)))
+        split_1 = int(np.floor(0.8 * len(value)))
+        split_2 = int(np.floor(0.9 * len(value)))
         split[key]['train'] = value[:split_1]
         split[key]['dev'] = value[split_1:split_2]
         split[key]['test'] = value[split_2:]
