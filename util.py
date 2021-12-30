@@ -10,12 +10,118 @@ from torchtext.data.utils import ngrams_iterator
 from torchtext.vocab import Vocab
 from torchtext.vocab import build_vocab_from_iterator
 from tqdm import tqdm
+import sys
+import csv
+import io
 
 T_co = TypeVar('T_co', covariant=True)
 T = TypeVar('T')
 
 stop_words = set(stopwords.words('english'))
 table = str.maketrans('', '', string.punctuation)
+
+tokenizer = get_tokenizer('basic_english')
+
+
+def yield_tokens(data_iter, ngrams=1):
+    for _, text in data_iter:
+        yield ngrams_iterator(tokenizer(text), ngrams)
+
+
+def unicode_csv_reader(unicode_csv_data, **kwargs):
+    r"""Since the standard csv library does not handle unicode in Python 2, we need a wrapper.
+    Borrowed and slightly modified from the Python docs:
+    https://docs.python.org/2/library/csv.html#csv-examples
+    Args:
+        unicode_csv_data: unicode csv data (see example below)
+    Examples:
+        >>> from torchtext.utils import unicode_csv_reader
+        >>> import io
+        >>> with io.open(data_path, encoding="utf8") as f:
+        >>>     reader = unicode_csv_reader(f)
+    """
+
+    # Fix field larger than field limit error
+    maxInt = sys.maxsize
+    while True:
+        # decrease the maxInt value by factor 10
+        # as long as the OverflowError occurs.
+        try:
+            csv.field_size_limit(maxInt)
+            break
+        except OverflowError:
+            maxInt = int(maxInt / 10)
+    csv.field_size_limit(maxInt)
+
+    for line in csv.reader(unicode_csv_data, **kwargs):
+        yield line
+
+
+def _create_data_from_csv(data_path):
+    with io.open(data_path, encoding="utf8") as f:
+        next(f)
+        reader = unicode_csv_reader(f)
+        for row in reader:
+            yield row[6], row[5], row[1], row[2], row[3], row[0]
+
+
+class _RawTextIterableDataset(torch.utils.data.IterableDataset):
+    """Defines an abstraction for raw text iterable datasets.
+    """
+
+    def __init__(self, full_num_lines, iterator):
+        """Initiate the dataset abstraction.
+        """
+        super(_RawTextIterableDataset, self).__init__()
+        self.full_num_lines = full_num_lines
+        self._iterator = iterator
+        self.num_lines = full_num_lines
+        self.current_pos = None
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current_pos == self.num_lines - 1:
+            raise StopIteration
+        item = next(self._iterator)
+        if self.current_pos is None:
+            self.current_pos = 0
+        else:
+            self.current_pos += 1
+        return item
+
+    def __len__(self):
+        return self.num_lines
+
+    def pos(self):
+        """
+        Returns current position of the iterator. This returns None
+        if the iterator hasn't been used yet.
+        """
+        return self.current_pos
+
+
+def to_map_style_dataset(iter_data):
+    r"""Convert iterable-style dataset to map-style dataset.
+    args:
+        iter_data: An iterator type object. Examples include Iterable datasets, string list, text io, generators etc.
+    """
+
+    # Inner class to convert iterable-style to map-style dataset
+    class _MapStyleDataset(torch.utils.data.Dataset):
+
+        def __init__(self, iter_data):
+            # TODO Avoid list issue #1296
+            self._data = list(iter_data)
+
+        def __len__(self):
+            return len(self._data)
+
+        def __getitem__(self, idx):
+            return self._data[idx]
+
+    return _MapStyleDataset(iter_data)
 
 
 def text_clean(tokens):

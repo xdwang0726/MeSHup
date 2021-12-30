@@ -16,11 +16,13 @@ from tqdm import tqdm
 
 from model import multichannel_GCN
 from pytorchtools import EarlyStopping
-from util import MeSH_indexing, pad_sequence, text_clean
+from util import *
 from torchtext.vocab import Vocab
 from torchtext.data.utils import get_tokenizer
 from torchtext.data.utils import ngrams_iterator
 from torchtext.vocab import build_vocab_from_iterator
+
+from util import _create_data_from_csv, _RawTextIterableDataset
 
 
 def set_seed(seed):
@@ -43,152 +45,6 @@ def _vocab_iterator(all_text, ngrams=1):
         yield ngrams_iterator(texts, ngrams)
 
 
-def prepare_dataset(train_data_path, dev_data_path, test_data_path, MeSH_id_pair_file, word2vec_path, graph_file):
-    """ Load Dataset and Preprocessing """
-    # load training data
-    f = open(train_data_path, encoding="utf8")
-    objects = ijson.items(f, 'articles.item')
-
-    train_pmid = []
-    train_text = []
-    train_id = []
-
-    print('Start loading training data')
-    logging.info("Start loading training data")
-    for i, obj in enumerate(tqdm(objects)):
-        text = {}
-        try:
-            ids = obj["pmid"]
-            title = obj['title'].strip()
-            text['TITLE'] = title
-            abstract = obj['abstractText'].strip()
-            text['ABSTRACT'] = abstract
-            intro = obj['INTRO']
-            text['INTRO'] = intro
-            method = obj['METHODS']
-            text['METHODS'] = method
-            results = obj['RESULTS']
-            text['RESULTS'] = results
-            discuss = obj['DISCUSS']
-            text['DISCUSS'] = discuss
-            mesh_id = list(obj['mesh'].keys())
-            train_pmid.append(ids)
-            train_text.append(text)
-            train_id.append(mesh_id)
-        except AttributeError:
-            print(obj["pmid"].strip())
-
-    print("Finish loading training data")
-
-    # load dev data
-    # f_dev = open(dev_data_path, encoding="utf8")
-    # dev_objects = ijson.items(f_dev, 'articles.item')
-    #
-    # dev_pmid = []
-    # dev_text = []
-    # dev_id = []
-    #
-    # print('Start loading dev data')
-    # logging.info("Start loading training data")
-    # for i, obj in enumerate(tqdm(dev_objects)):
-    #     text = {}
-    #     try:
-    #         ids = obj["pmid"]
-    #         title = obj['title'].strip()
-    #         text['TITLE'] = title
-    #         abstract = obj['abstractText'].strip()
-    #         text['ABSTRACT'] = abstract
-    #         intro = obj['INTRO']
-    #         text['INTRO'] = intro
-    #         method = obj['METHODS']
-    #         text['METHODS'] = method
-    #         results = obj['RESULTS']
-    #         text['RESULTS'] = results
-    #         discuss = obj['DISCUSS']
-    #         text['DISCUSS'] = discuss
-    #         mesh_id = list(obj['mesh'].keys())
-    #         dev_pmid.append(ids)
-    #         dev_text.append(text)
-    #         dev_id.append(mesh_id)
-    #     except AttributeError:
-    #         print(obj["pmid"].strip())
-
-    # print("Finish loading dev data, number of development", len(dev_id))
-
-    # load test data
-    # f_t = open(test_data_path, encoding="utf8")
-    # test_objects = ijson.items(f_t, 'documents.item')
-    #
-    # test_pmid = []
-    # test_text = []
-    # test_id = []
-    #
-    # print('Start loading test data')
-    # logging.info("Start loading test data")
-    # for i, obj in enumerate(tqdm(test_objects)):
-    #     text = {}
-    #     try:
-    #         ids = obj["pmid"]
-    #         title = obj['title'].strip()
-    #         text['TITLE'] = title
-    #         abstract = obj['abstractText'].strip()
-    #         text['ABSTRACT'] = abstract
-    #         intro = obj['INTRO']
-    #         text['INTRO'] = intro
-    #         method = obj['METHODS']
-    #         text['METHODS'] = method
-    #         results = obj['RESULTS']
-    #         text['RESULTS'] = results
-    #         discuss = obj['DISCUSS']
-    #         text['DISCUSS'] = discuss
-    #         mesh_id = list(obj['mesh'].keys())
-    #         test_pmid.append(ids)
-    #         test_text.append(text)
-    #         test_id.append(mesh_id)
-    #     except AttributeError:
-    #         print(obj["pmid"].strip())
-
-    # print("Finish loading test data, number of test", len(test_pmid))
-
-    print('load and prepare Mesh')
-    # read full MeSH ID list
-    mapping_id = {}
-    with open(MeSH_id_pair_file, 'r') as f:
-        for line in f:
-            (key, value) = line.split('=')
-            mapping_id[key] = value.strip()
-
-    meshIDs = list(mapping_id.values())
-    print('Total number of labels %d' % len(meshIDs))
-    mlb = MultiLabelBinarizer(classes=meshIDs)
-    mlb.fit(meshIDs)
-
-    # create Vector object map tokens to vectors
-    print('load pre-trained BioWord2Vec')
-    cache, name = os.path.split(word2vec_path)
-    vectors = Vectors(name=name, cache=cache)
-
-    # Preparing training and test datasets
-    print('prepare training and test sets')
-    # alltext = train_text + dev_text + test_text
-    alltext = train_text
-    train_dataset = MeSH_indexing(alltext, train_text[:200000], train_id[:200000], is_test=False)
-    # dev_dataset = MeSH_indexing(alltext, train_texts=dev_text, train_labels=dev_id, is_test=False)
-    # test_dataset = MeSH_indexing(alltext, test_texts=test_text, test_labels=test_id, is_test=True)
-    dev_dataset, test_dataset = None, None
-
-    print('building vocab')
-    # vocab = train_dataset.get_vocab()
-    vocab =build_vocab_from_iterator(_vocab_iterator(alltext, ngrams=1))
-    # Prepare label features
-    print('Load graph')
-    G = dgl.load_graphs(graph_file)[0][0]
-    print('graph', G.ndata['feat'].shape)
-
-    print('prepare dataset and labels graph done!')
-    return len(meshIDs), mlb, vocab, train_dataset, dev_dataset, test_dataset, vectors, G
-
-
 def weight_matrix(vocab, vectors, dim=200):
     weight_matrix = np.zeros([len(vocab.itos), dim])
     for i, token in enumerate(vocab.stoi):
@@ -206,65 +62,30 @@ def generate_batch(batch):
             concatenated as a single tensor for the input of nn.EmbeddingBag.
         cls: a tensor saving the labels of individual text entries.
     """
-    # check if the dataset is multi-channel or not
-    if len(batch[0]) == 6:
-        label = [entry[0] for entry in batch]
-        print('label', label)
-        # padding according to the maximum sequence length in batch
-        abstract = [entry[1] for entry in batch]
-        # abstract = convert_text_tokens(abstract)
-        print('abstract', abstract)
-        abstract = pad_sequence(abstract, ksz=3, batch_first=True)
+    label = []
+    for entry in batch:
+        l = entry[0].replace('[', '')
+        l = l.replace(']', '')
+        l = l.replace("'", '')
+        l = l.split(',')
+        label.append(l)
 
-        intro = [entry[2] for entry in batch]
-        # intro = convert_text_tokens(intro)
-        intro = pad_sequence(intro, ksz=3, batch_first=True)
+    title_abstract = [torch.tensor(convert_text_tokens(text_clean(entry[1] + ' ' + entry[2]))) for entry in batch]
+    title_abstract = pad_sequence(title_abstract, ksz=3, batch_first=True)
 
-        method = [entry[3] for entry in batch]
-        # method = convert_text_tokens(method)
-        method = pad_sequence(method, ksz=3, batch_first=True)
+    intro = [torch.tensor(convert_text_tokens(text_clean(entry[3]))) for entry in batch]
+    intro = pad_sequence(intro, ksz=3, batch_first=True)
 
-        results = [entry[4] for entry in batch]
-        # results = convert_text_tokens(results)
-        results = pad_sequence(results, ksz=3, batch_first=True)
+    method = [torch.tensor(convert_text_tokens(text_clean(entry[4]))) for entry in batch]
+    method = pad_sequence(method, ksz=3, batch_first=True)
 
-        discuss = [entry[5] for entry in batch]
-        # discuss = convert_text_tokens(discuss)
-        discuss = pad_sequence(discuss, ksz=3, batch_first=True)
+    result = [torch.tensor(convert_text_tokens(text_clean(entry[5]))) for entry in batch]
+    result = pad_sequence(result, ksz=3, batch_first=True)
 
-        return label, abstract, intro, method, results, discuss
-    else:
-        print('WARNING: BATCH ERROR!')
+    discuss = [torch.tensor(convert_text_tokens(text_clean(entry[6]))) for entry in batch]
+    discuss = pad_sequence(discuss, ksz=3, batch_first=True)
 
-
-# def generate_batch(batch):
-#     """
-#     Output:
-#         text: the text entries in the data_batch are packed into a list and
-#             concatenated as a single tensor for the input of nn.EmbeddingBag.
-#         cls: a tensor saving the labels of individual text entries.
-#     """
-#     label_list, abstract_batch, intro_batch, method_batch, results_batch, discuss_batch = [], [], [], [], [], []
-#     for label, abstract, intro, method, results, discuss in batch:
-#         abstract = torch.tensor(convert_text_tokens(abstract))
-#         intro = torch.tensor(convert_text_tokens(intro))
-#         method = torch.tensor(convert_text_tokens(method))
-#         results = torch.tensor(convert_text_tokens(results))
-#         discuss = torch.tensor(convert_text_tokens(discuss))
-#     label_list.append(label)
-#     print(label_list)
-#     abstract_batch.append(abstract)
-#     print(abstract_batch)
-#     abstract_batch = pad_sequence(abstract_batch, ksz=3, batch_first=True)
-#     intro_batch.append(intro)
-#     intro_batch = pad_sequence(intro_batch, ksz=3, batch_first=True)
-#     method_batch.append(method)
-#     method_batch = pad_sequence(method_batch, ksz=3, batch_first=True)
-#     results_batch.append(results)
-#     results_batch = pad_sequence(results_batch, ksz=3, batch_first=True)
-#     discuss_batch.append(discuss)
-#     discuss_batch = pad_sequence(discuss_batch, ksz=3, batch_first=True)
-#     return label_list, abstract_batch, intro_batch, method_batch, results_batch, discuss_batch
+    return label, title_abstract, intro, method, result, discuss
 
 
 def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, criterion, device, num_workers, optimizer,
@@ -385,11 +206,46 @@ if __name__ == "__main__":
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     print('Device:{}'.format(device))
 
-    num_nodes, mlb, vocab, train_dataset, dev_dataset, test_dataset, vectors, G = \
-        prepare_dataset(args.train_path, args.dev_path, args.test_path, args.meSH_pair_path, args.word2vec_path, args.graph)
+    # num_nodes, mlb, vocab, train_dataset, dev_dataset, test_dataset, vectors, G = \
+    #     prepare_dataset(args.train_path, args.dev_path, args.test_path, args.meSH_pair_path, args.word2vec_path, args.graph)
 
+
+    NUM_LINES = {
+        'train': 765920,
+        'dev': 95737,
+        'test': 95769
+    }
+    print('load and prepare Mesh')
+    # read full MeSH ID list
+    mapping_id = {}
+    with open(args.meSH_pair_path, 'r') as f:
+        for line in f:
+            (key, value) = line.split('=')
+            mapping_id[key] = value.strip()
+
+    meshIDs = list(mapping_id.values())
+    print('Total number of labels %d' % len(meshIDs))
+    index_dic = {k: v for v, k in enumerate(meshIDs)}
+    mesh_index = list(index_dic.values())
+    mlb = MultiLabelBinarizer(classes=mesh_index)
+    mlb.fit(mesh_index)
+    num_nodes = len(meshIDs)
+
+    print('load pre-trained BioWord2Vec')
+    train_iterator = _RawTextIterableDataset(NUM_LINES, _create_data_from_csv(args.train_path))
+    cache, name = os.path.split(args.word2vec_path)
+    vectors = Vectors(name=name, cache=cache)
+    vocab = build_vocab_from_iterator(yield_tokens(train_iterator))
     vocab_size = len(vocab)
 
+    print('Load graph')
+    G = dgl.load_graphs(args.graph)[0][0]
+    print('graph', G.ndata['feat'].shape)
+
+    train_iterator = _RawTextIterableDataset(NUM_LINES, _create_data_from_csv(args.train_path))
+    dev_iterator = _RawTextIterableDataset(NUM_LINES, _create_data_from_csv(args.dev_path))
+    train_dataset = to_map_style_dataset(train_iterator)
+    dev_dataset = to_map_style_dataset(dev_iterator)
     model = multichannel_GCN(vocab_size, args.dropout, args.ksz, num_nodes)
     model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
 
