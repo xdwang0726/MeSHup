@@ -22,7 +22,7 @@ from torchtext.data.utils import get_tokenizer
 from torchtext.data.utils import ngrams_iterator
 from torchtext.vocab import build_vocab_from_iterator
 
-from util import _create_data_from_csv, _RawTextIterableDataset
+from util import _create_data_from_csv, _RawTextIterableDataset, _create_data_from_csv_vocab
 
 
 def set_seed(seed):
@@ -70,19 +70,19 @@ def generate_batch(batch):
         l = l.split(',')
         label.append(l)
 
-    title_abstract = [torch.tensor(convert_text_tokens(text_clean(entry[1] + ' ' + entry[2]))) for entry in batch]
+    title_abstract = [torch.tensor(convert_text_tokens(entry[1])) for entry in batch]
     title_abstract = pad_sequence(title_abstract, ksz=3, batch_first=True)
 
-    intro = [torch.tensor(convert_text_tokens(text_clean(entry[3]))) for entry in batch]
+    intro = [torch.tensor(convert_text_tokens(entry[2])) for entry in batch]
     intro = pad_sequence(intro, ksz=3, batch_first=True)
 
-    method = [torch.tensor(convert_text_tokens(text_clean(entry[4]))) for entry in batch]
+    method = [torch.tensor(convert_text_tokens(entry[3])) for entry in batch]
     method = pad_sequence(method, ksz=3, batch_first=True)
 
-    result = [torch.tensor(convert_text_tokens(text_clean(entry[5]))) for entry in batch]
+    result = [torch.tensor(convert_text_tokens(entry[4])) for entry in batch]
     result = pad_sequence(result, ksz=3, batch_first=True)
 
-    discuss = [torch.tensor(convert_text_tokens(text_clean(entry[6]))) for entry in batch]
+    discuss = [torch.tensor(convert_text_tokens(entry[5])) for entry in batch]
     discuss = pad_sequence(discuss, ksz=3, batch_first=True)
 
     return label, title_abstract, intro, method, result, discuss
@@ -206,11 +206,8 @@ if __name__ == "__main__":
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     print('Device:{}'.format(device))
 
-    # num_nodes, mlb, vocab, train_dataset, dev_dataset, test_dataset, vectors, G = \
-    #     prepare_dataset(args.train_path, args.dev_path, args.test_path, args.meSH_pair_path, args.word2vec_path, args.graph)
-
-
     NUM_LINES = {
+        'all': 957426,
         'train': 765920,
         'dev': 95737,
         'test': 95769
@@ -232,10 +229,10 @@ if __name__ == "__main__":
     num_nodes = len(meshIDs)
 
     print('load pre-trained BioWord2Vec')
-    train_iterator = _RawTextIterableDataset(NUM_LINES, _create_data_from_csv(args.train_path))
+    vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], _create_data_from_csv_vocab(args.train_path))
     cache, name = os.path.split(args.word2vec_path)
     vectors = Vectors(name=name, cache=cache)
-    vocab = build_vocab_from_iterator(yield_tokens(train_iterator))
+    vocab = build_vocab_from_iterator(yield_tokens(vocab_iterator))
     vocab_size = len(vocab)
 
     print('Load graph')

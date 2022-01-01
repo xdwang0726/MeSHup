@@ -1,5 +1,7 @@
-import logging
+import csv
+import io
 import string
+import sys
 from typing import TypeVar, List
 
 import torch
@@ -7,12 +9,6 @@ from nltk.corpus import stopwords
 from torch.utils.data import Dataset
 from torchtext.data.utils import get_tokenizer
 from torchtext.data.utils import ngrams_iterator
-from torchtext.vocab import Vocab
-from torchtext.vocab import build_vocab_from_iterator
-from tqdm import tqdm
-import sys
-import csv
-import io
 
 T_co = TypeVar('T_co', covariant=True)
 T = TypeVar('T')
@@ -23,8 +19,17 @@ table = str.maketrans('', '', string.punctuation)
 tokenizer = get_tokenizer('basic_english')
 
 
+def _create_data_from_csv_vocab(data_path):
+    with io.open(data_path, encoding="utf8") as f:
+        next(f)
+        reader = unicode_csv_reader(f)
+        for row in reader:
+            text = row[5] + row[1] + row[2] + row[3] + row[0]
+            yield text
+
+
 def yield_tokens(data_iter, ngrams=1):
-    for _, text in data_iter:
+    for text in data_iter:
         yield ngrams_iterator(tokenizer(text), ngrams)
 
 
@@ -62,7 +67,13 @@ def _create_data_from_csv(data_path):
         next(f)
         reader = unicode_csv_reader(f)
         for row in reader:
-            yield row[6], row[5], row[1], row[2], row[3], row[0]
+            title_abstract = text_clean(tokenizer(row[5]))
+            intro = text_clean(tokenizer(row[1]))
+            method = text_clean(tokenizer(row[2]))
+            results = text_clean(tokenizer(row[3]))
+            discuss = text_clean(tokenizer(row[0]))
+
+            yield row[6], title_abstract, intro, method, results, discuss
 
 
 class _RawTextIterableDataset(torch.utils.data.IterableDataset):
@@ -132,133 +143,6 @@ def text_clean(tokens):
     filtered_text = [w for w in text_nostop if len(w) > 1]  # remove single character token
 
     return filtered_text
-
-
-def _vocab_iterator(all_text, ngrams=1):
-
-    tokenizer = get_tokenizer('basic_english')
-
-    for i, text in enumerate(all_text):
-        texts_pre_article = ' '.join(text.values())
-        texts = tokenizer(texts_pre_article)
-        texts = text_clean(texts)
-        yield ngrams_iterator(texts, ngrams)
-
-
-def _text_iterator(text, labels=None, ngrams=1):
-    """ all_text: a list of dictionary, each dictionary: {section: texts, ....}"""
-    tokenizer = get_tokenizer('basic_english')
-    for i, text in enumerate(text):
-        title = tokenizer(text['TITLE'])
-        abstract = tokenizer(text['ABSTRACT'])
-        title_abstract = title + abstract
-        title_abstract = text_clean(title_abstract)
-
-        intro = tokenizer(text['INTRO'])
-        intro = text_clean(intro)
-
-        method = tokenizer(text['METHODS'])
-        method = text_clean(method)
-
-        results = tokenizer(text['RESULTS'])
-        results = text_clean(results)
-
-        discuss = tokenizer(text['DISCUSS'])
-        discuss = text_clean(discuss)
-
-        label = labels[i]
-
-        yield label, ngrams_iterator(title_abstract, ngrams), ngrams_iterator(intro, ngrams), ngrams_iterator(method, ngrams), ngrams_iterator(results, ngrams), ngrams_iterator(discuss, ngrams)
-
-
-def _create_data_from_iterator(vocab, iterator, include_unk=False):
-    data = []
-    labels = []
-    with tqdm(unit_scale=0, unit='lines') as t:
-        for label, abstract, intro, method, results, discuss in iterator:
-            if include_unk:
-                abstract_token = torch.tensor([vocab[token] for token in abstract])
-                print('abtoken', abstract_token)
-                intro_token = torch.tensor([vocab[token] for token in intro])
-                method_token = torch.tensor([vocab[token] for token in method])
-                results_token = torch.tensor([vocab[token] for token in results])
-                discuss_token = torch.tensor([vocab[token] for token in discuss])
-            else:
-                abstract_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in abstract])))
-                intro_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in intro])))
-                method_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in method])))
-                results_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in results])))
-                discuss_token = torch.tensor(list(filter(lambda x: x is not Vocab.UNK, [vocab[token] for token in discuss])))
-            data.append((label, abstract_token, intro_token, method_token, results_token, discuss_token))
-            # data.append((label, abstract, intro, method, results, discuss))
-            labels.extend(label)
-            t.update(1)
-        return data, list(set(labels))
-
-
-class MultiLabelTextClassificationDataset(torch.utils.data.Dataset):
-    def __init__(self, vocab, data, labels=None):
-        """Initiate text-classification dataset.
-         Arguments:
-             vocab: Vocabulary object used for dataset.
-             data: a list of label/tokens tuple. tokens are a tensor after numericalizing the string tokens.
-                   label is a list of list.
-                 [([label1], ab_tokens1, title_tokens1), ([label2], ab_tokens2, title_tokens2), ([label3], ab_tokens3, title_tokens3)]
-             label: a set of the labels.
-                 {label1, label2}
-        """
-        super(MultiLabelTextClassificationDataset, self).__init__()
-        self._vocab = vocab
-        self._data = data
-        self._labels = labels
-
-    def __getitem__(self, i):
-        return self._data[i]
-
-    def __len__(self):
-        return len(self._data)
-
-    def __iter__(self):
-        for x in self._data:
-            yield x
-
-    def get_labels(self):
-        return self._labels
-
-    def get_vocab(self):
-        return self._vocab
-
-
-def _setup_datasets(alltext, train_texts=None, train_labels=None, test_texts=None, test_labels=None, ngrams=1, vocab=None,
-                    include_unk=False, is_test=False):
-    if vocab is None:
-        logging.info('Building Vocab based on {}'.format(alltext))
-        vocab = build_vocab_from_iterator(_vocab_iterator(alltext, ngrams))
-    else:
-        if not isinstance(vocab, Vocab):
-            raise TypeError("Passed vocabulary is not of type Vocab")
-    print('Vocab has {} entries'.format(len(vocab)))
-    if is_test:
-        logging.info('Creating testing data')
-        test_data, test_labels = _create_data_from_iterator(_text_iterator(test_texts, labels=test_labels, ngrams=ngrams),
-                                                            include_unk)
-        logging.info('Total number of labels in test set:'.format(len(test_labels)))
-        return MultiLabelTextClassificationDataset(vocab, test_data, test_labels)
-    else:
-        logging.info('Creating training data')
-        train_data, train_labels = _create_data_from_iterator(_text_iterator(train_texts, labels=train_labels, ngrams=ngrams),
-                                                              include_unk)
-        logging.info('Total number of labels in training set:'.format(len(train_labels)))
-        return MultiLabelTextClassificationDataset(vocab, train_data, train_labels)
-
-
-def MeSH_indexing(alltexts, train_texts=None, train_labels=None, test_texts=None, test_labels=None, is_test=False):
-    """
-    Defines MeSH_indexing datasets.
-    The label set contains all mesh terms in 2019 version (https://meshb.nlm.nih.gov/treeView)
-    """
-    return _setup_datasets(alltexts, train_texts, train_labels, test_texts, test_labels, ngrams=1, vocab=None, include_unk=False,
-                           is_test=is_test)
 
 
 def pad_sequence(sequences, ksz, batch_first=False, padding_value=0.0):
