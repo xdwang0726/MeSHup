@@ -71,8 +71,9 @@ def generate_batch(batch):
         label.append(l)
 
     title_abstract = [torch.tensor(convert_text_tokens(entry[1])) for entry in batch]
+    print(entry[1])
     title_abstract = pad_sequence(title_abstract, ksz=3, batch_first=True)
-    print('abstract', len(title_abstract[0]))
+    print('abstract', len(title_abstract), len(title_abstract[0]))
 
     intro = [torch.tensor(convert_text_tokens(entry[2])) for entry in batch]
     intro = pad_sequence(intro, ksz=3, batch_first=True)
@@ -87,6 +88,7 @@ def generate_batch(batch):
     print('result', len(result[0]))
 
     discuss = [torch.tensor(convert_text_tokens(entry[5])) for entry in batch]
+    print(entry[5])
     discuss = pad_sequence(discuss, ksz=3, batch_first=True)
     print('discuss', len(discuss[0]))
 
