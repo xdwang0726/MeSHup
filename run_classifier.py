@@ -83,14 +83,11 @@ def generate_batch(batch):
     result = pad_sequence(result, ksz=3, batch_first=True)
 
     discuss = [torch.tensor(convert_text_tokens(entry[5])) for entry in batch]
-    #print(entry[5])
-    #print(convert_text_tokens(entry[5]))
+    print(convert_text_tokens(entry[5]))
     discuss = pad_sequence(discuss, ksz=3, batch_first=True)
+    print(discuss)
 
-    pmid = [entry[6] for entry in batch]
-    print(pmid)
-
-    return label, title_abstract, intro, method, result, discuss, pmid
+    return label, title_abstract, intro, method, result, discuss
 
 
 def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, criterion, device, num_workers, optimizer,
@@ -115,7 +112,7 @@ def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, cri
     print("Training....")
     for epoch in range(num_epochs):
         model.train()  # prep model for training
-        for i, (label, abstract, intro, method, results, discuss, pmid) in enumerate(train_data):
+        for i, (label, abstract, intro, method, results, discuss) in enumerate(train_data):
             label = torch.from_numpy(mlb.fit_transform(label)).type(torch.float)
             label = label.to(device)
 
@@ -138,7 +135,7 @@ def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, cri
 
         with torch.no_grad():
             model.eval()
-            for i, (label, abstract, intro, method, results, discuss, pmid) in enumerate(valid_data):
+            for i, (label, abstract, intro, method, results, discuss) in enumerate(valid_data):
                 label = torch.from_numpy(mlb.fit_transform(label)).type(torch.float)
                 label = label.to(device)
 

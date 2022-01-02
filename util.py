@@ -73,7 +73,7 @@ def _create_data_from_csv(data_path):
             results = text_clean(tokenizer(row[3]))
             discuss = text_clean(tokenizer(row[0]))
 
-            yield row[6], title_abstract, intro, method, results, discuss, row[4]
+            yield row[6], title_abstract, intro, method, results, discuss
 
 
 class _RawTextIterableDataset(torch.utils.data.IterableDataset):
