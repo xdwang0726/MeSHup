@@ -224,7 +224,7 @@ if __name__ == "__main__":
             (key, value) = line.split('=')
             mapping_id[key] = value.strip()
 
-    meshIDs = list(mapping_id.values())
+    meshIDs = list(mapping_id.keys())
     print('Total number of labels %d' % len(meshIDs))
     mlb = MultiLabelBinarizer(classes=meshIDs)
     mlb.fit(meshIDs)
