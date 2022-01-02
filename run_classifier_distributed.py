@@ -244,8 +244,8 @@ if __name__ == "__main__":
     print('graph', G.ndata['feat'].shape)
 
     def convert_text_tokens(text): return [vocab[token] for token in text]
-    train_iterator = _RawTextIterableDataset(NUM_LINES, _create_data_from_csv(args.train_path))
-    dev_iterator = _RawTextIterableDataset(NUM_LINES, _create_data_from_csv(args.dev_path))
+    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], _create_data_from_csv(args.train_path))
+    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], _create_data_from_csv(args.dev_path))
     train_dataset = to_map_style_dataset(train_iterator)
     dev_dataset = to_map_style_dataset(dev_iterator)
 
