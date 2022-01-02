@@ -67,11 +67,11 @@ def _create_data_from_csv(data_path):
         next(f)
         reader = unicode_csv_reader(f)
         for row in reader:
-            title_abstract = text_clean(tokenizer(row[1]))
-            intro = text_clean(tokenizer(row[2]))
-            method = text_clean(tokenizer(row[3]))
-            results = text_clean(tokenizer(row[4]))
-            discuss = text_clean(tokenizer(row[5]))
+            title_abstract = text_clean(tokenizer(row[1]))[:200]
+            intro = text_clean(tokenizer(row[2]))[:600]
+            method = text_clean(tokenizer(row[3]))[:1000]
+            results = text_clean(tokenizer(row[4]))[:1000]
+            discuss = text_clean(tokenizer(row[5]))[:1000]
 
             yield row[6], title_abstract, intro, method, results, discuss
 
