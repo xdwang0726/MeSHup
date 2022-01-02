@@ -172,6 +172,21 @@ def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, cri
     return model, avg_train_losses, avg_valid_losses
 
 
+def preallocate_gpu_memory(G, model, batch_sz, device, num_label, criterion):
+    sudo_abstract = torch.randint(123900, size=(batch_sz, 400), device=device)
+    sudo_intro = torch.randint(123900, size=(batch_sz, 1000), device=device)
+    sudo_method = torch.randint(123900, size=(batch_sz, 1000), device=device)
+    sudo_results = torch.randint(123900, size=(batch_sz, 1000), device=device)
+    sudo_discuss = torch.randint(123900, size=(batch_sz, 1000), device=device)
+    sudo_label = torch.randint(2, size=(batch_sz, num_label), device=device).type(torch.float)
+    G, G.ndata['feat'] = G.to(device), G.ndata['feat'].to(device)
+
+    output = model(sudo_abstract, sudo_intro, sudo_method, sudo_results, sudo_discuss, G, G.ndata['feat'])
+    loss = criterion(output, sudo_label)
+    loss.backward()
+    model.zero_grad()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--full_path')
@@ -261,7 +276,7 @@ if __name__ == "__main__":
 
 
     # pre-allocate GPU memory
-    # preallocate_gpu_memory(G, model, args.batch_sz, device, num_nodes, criterion)
+    preallocate_gpu_memory(G, model, args.batch_sz, device, num_nodes, criterion)
 
     # training
     print("Start training!")
