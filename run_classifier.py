@@ -83,8 +83,8 @@ def generate_batch(batch):
     result = pad_sequence(result, ksz=3, batch_first=True)
 
     discuss = [torch.tensor(convert_text_tokens(entry[5])) for entry in batch]
-    print(entry[5])
-    print(convert_text_tokens(entry[5]))
+    #print(entry[5])
+    #print(convert_text_tokens(entry[5]))
     discuss = pad_sequence(discuss, ksz=3, batch_first=True)
 
     pmid = [entry[6] for entry in batch]
