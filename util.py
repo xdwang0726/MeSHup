@@ -72,7 +72,7 @@ def _create_data_from_csv(data_path):
             method = text_clean(tokenizer(row[2]))
             results = text_clean(tokenizer(row[3]))
             discuss = text_clean(tokenizer(row[0]))
-
+            print('utils', discuss)
             yield row[6], title_abstract, intro, method, results, discuss
 
 
