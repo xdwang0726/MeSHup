@@ -118,10 +118,7 @@ def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, cri
 
             abstract, intro, method, results, discuss = abstract.to(device), intro.to(device), method.to(device), results.to(device), discuss.to(device)
             G, G.ndata['feat'] = G.to(device), G.ndata['feat'].to(device)
-            print('abstract', abstract.size())
-            print('intro', intro.size())
-            print('method', method.size())
-            print('results', method.size())
+
             output = model(abstract, intro, method, results, discuss, G, G.ndata['feat'])
             loss = criterion(output, label)
 
@@ -234,9 +231,9 @@ if __name__ == "__main__":
     #     'test': 95769
     # }
     NUM_LINES = {
-        'all': 1000,
-        'train': 70,
-        'dev': 20,
+        'all': 957426,
+        'train': 250000,
+        'dev': 30000,
         'test': 95769
     }
     print('load and prepare Mesh')
@@ -254,7 +251,7 @@ if __name__ == "__main__":
     num_nodes = len(meshIDs)
 
     print('load pre-trained BioWord2Vec')
-    vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], _create_data_from_csv_vocab(args.full_path))
+    vocab_iterator = _RawTextIterableDataset(NUM_LINES['train'], _create_data_from_csv_vocab(args.full_path))
     cache, name = os.path.split(args.word2vec_path)
     vectors = Vectors(name=name, cache=cache)
     vocab = build_vocab_from_iterator(yield_tokens(vocab_iterator))
