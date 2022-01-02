@@ -203,10 +203,16 @@ if __name__ == "__main__":
     print('From Rank: {}, ==> Making model..'.format(rank))
     # Get dataset and label graph & Load pre-trained embeddings
 
+    # NUM_LINES = {
+    #     'all': 957426,
+    #     'train': 765920,
+    #     'dev': 95737,
+    #     'test': 95769
+    # }
     NUM_LINES = {
-        'all': 957426,
-        'train': 765920,
-        'dev': 95737,
+        'all': 1000,
+        'train': 70,
+        'dev': 20,
         'test': 95769
     }
     print('load and prepare Mesh')
