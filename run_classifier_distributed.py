@@ -226,10 +226,8 @@ if __name__ == "__main__":
 
     meshIDs = list(mapping_id.values())
     print('Total number of labels %d' % len(meshIDs))
-    index_dic = {k: v for v, k in enumerate(meshIDs)}
-    mesh_index = list(index_dic.values())
-    mlb = MultiLabelBinarizer(classes=mesh_index)
-    mlb.fit(mesh_index)
+    mlb = MultiLabelBinarizer(classes=meshIDs)
+    mlb.fit(meshIDs)
     num_nodes = len(meshIDs)
 
     print('load pre-trained BioWord2Vec')
