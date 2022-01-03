@@ -10,10 +10,11 @@ from sklearn.preprocessing import MultiLabelBinarizer
 from torch.utils.data import DataLoader, DistributedSampler
 from torchtext.vocab import Vectors, build_vocab_from_iterator
 
-from model import multichannel_GCN
+from model import multichannel_GCN_title_abstract
 from pytorchtools import EarlyStopping
 from util import *
-from util import _RawTextIterableDataset, _create_data_from_csv_vocab, _create_data_from_csv
+from util import _RawTextIterableDataset, _create_data_from_csv_vocab, _create_data_from_csv, \
+    _create_data_from_csv_vocab_abstract
 
 
 def set_seed(seed):
@@ -226,7 +227,7 @@ if __name__ == "__main__":
     num_nodes = len(meshIDs)
 
     print('load pre-trained BioWord2Vec')
-    vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], _create_data_from_csv_vocab(args.full_path))
+    vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], _create_data_from_csv_vocab_abstract(args.full_path))
     cache, name = os.path.split(args.word2vec_path)
     vectors = Vectors(name=name, cache=cache)
     vocab = build_vocab_from_iterator(yield_tokens(vocab_iterator))
@@ -237,12 +238,12 @@ if __name__ == "__main__":
     print('graph', G.ndata['feat'].shape)
 
     def convert_text_tokens(text): return [vocab[token] for token in text]
-    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], _create_data_from_csv(args.train_path))
-    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], _create_data_from_csv(args.dev_path))
+    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], _create_data_from_csv_vocab_abstract(args.train_path))
+    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], _create_data_from_csv_vocab_abstract(args.dev_path))
     train_dataset = to_map_style_dataset(train_iterator)
     dev_dataset = to_map_style_dataset(dev_iterator)
 
-    model = multichannel_GCN(vocab_size, args.dropout, num_nodes)
+    model = multichannel_GCN_title_abstract(vocab_size, args.dropout, num_nodes)
     model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
 
     model.cuda()

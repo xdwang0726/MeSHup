@@ -12,7 +12,7 @@ from torchtext.data.utils import ngrams_iterator
 from torchtext.vocab import Vectors
 from torchtext.vocab import build_vocab_from_iterator
 
-from model import multichannel_GCN
+from model import multichannel_GCN_title_abstract
 from pytorchtools import EarlyStopping
 from util import *
 from util import _RawTextIterableDataset, _create_data_from_csv_abstract, _create_data_from_csv_vocab_abstract
@@ -245,7 +245,7 @@ if __name__ == "__main__":
     dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], _create_data_from_csv_abstract(args.dev_path))
     train_dataset = to_map_style_dataset(train_iterator)
     dev_dataset = to_map_style_dataset(dev_iterator)
-    model = multichannel_GCN(vocab_size, args.dropout, args.ksz, num_nodes)
+    model = multichannel_GCN_title_abstract(vocab_size, args.dropout, args.ksz, num_nodes)
     model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
 
     model.cuda()
