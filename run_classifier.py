@@ -232,8 +232,8 @@ if __name__ == "__main__":
     # }
     NUM_LINES = {
         'all': 957426,
-        'train': 250000,
-        'dev': 30000,
+        'train': 150000,
+        'dev': 19000,
         'test': 95769
     }
     print('load and prepare Mesh')
