@@ -243,7 +243,7 @@ if __name__ == "__main__":
     train_dataset = to_map_style_dataset(train_iterator)
     dev_dataset = to_map_style_dataset(dev_iterator)
 
-    model = multichannel_GCN_title_abstract(vocab_size, args.dropout, num_nodes)
+    model = multichannel_GCN_title_abstract(vocab_size, args.dropout, args.ksz, num_nodes)
     model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
 
     model.cuda()
