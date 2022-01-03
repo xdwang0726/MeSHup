@@ -1,7 +1,6 @@
 import dgl.function as fn
 import torch
 import torch.nn as nn
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import torch.nn.functional as F
 
 gcn_msg = fn.copy_src(src='h', out='m')
@@ -129,6 +128,49 @@ class multichannel_GCN(nn.Module):
 
         # get document feature
         x_feature = torch.sum(context_feature * label_feature, dim=2)
+
+        # add CorNet
+        x_feature = self.cornet(x_feature)
+        return x_feature
+
+
+class multichannel_GCN_title_abstract(nn.Module):
+    def __init__(self, vocab_size, dropout, ksz, output_size, embedding_dim=200, cornet_dim=1000, n_cornet_blocks=2):
+        super(multichannel_GCN, self).__init__()
+
+        self.vocab_size = vocab_size
+        self.dropout = dropout
+        self.ksz = ksz
+        self.embedding_dim = embedding_dim
+
+        self.embedding_layer = nn.Embedding(num_embeddings=self.vocab_size, embedding_dim=embedding_dim)
+
+        self.dconv = nn.Sequential(nn.Conv1d(self.embedding_dim, self.embedding_dim, kernel_size=self.ksz, padding=0, dilation=1),
+                                   nn.SELU(), nn.AlphaDropout(p=0.05),
+                                   nn.Conv1d(self.embedding_dim, self.embedding_dim, kernel_size=self.ksz, padding=0, dilation=2),
+                                   nn.SELU(), nn.AlphaDropout(p=0.05),
+                                   nn.Conv1d(self.embedding_dim, self.embedding_dim, kernel_size=self.ksz, padding=0, dilation=3),
+                                   nn.SELU(), nn.AlphaDropout(p=0.05))
+
+        self.gcn = LabelNet(embedding_dim, embedding_dim, embedding_dim)
+
+        # corNet
+        self.cornet = CorNet(output_size, cornet_dim, n_cornet_blocks)
+
+    def forward(self, abstract, g, g_node_feature):
+        # get label features
+        label_feature = self.gcn(g, g_node_feature)
+        # label_feature = torch.cat((label_feature, g_node_feature), dim=1) # torch.Size([29368, 200*2])
+        label_feature = label_feature + g_node_feature  # torch.Size([29368, 200])
+
+        # get content features
+        abstract = self.embedding_layer(abstract.long())  #size: (bs, seq_len, embed_dim)
+        abstract_conv = self.dconv(abstract.permute(0, 2, 1))  # (bs, embed_dim, seq_len-ksz+1)
+        abstract_atten = torch.softmax(torch.matmul(abstract_conv.transpose(1, 2), label_feature.transpose(0, 1)), dim=1)  # size: (bs, seq_len-ksz+1, 29368)
+        abstract_feature = torch.matmul(abstract_conv, abstract_atten).transpose(1, 2)  # size: (bs, 29368, embed_dim)
+
+        # get document feature
+        x_feature = torch.sum(abstract_feature * label_feature, dim=2)
 
         # add CorNet
         x_feature = self.cornet(x_feature)

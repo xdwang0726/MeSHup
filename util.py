@@ -19,12 +19,20 @@ table = str.maketrans('', '', string.punctuation)
 tokenizer = get_tokenizer('basic_english')
 
 
+def _create_data_from_csv_vocab_abstract(data_path):
+    with io.open(data_path, encoding="utf8") as f:
+        next(f)
+        reader = unicode_csv_reader(f)
+        for row in reader:
+            yield row[1]
+
+
 def _create_data_from_csv_vocab(data_path):
     with io.open(data_path, encoding="utf8") as f:
         next(f)
         reader = unicode_csv_reader(f)
         for row in reader:
-            text = row[5] + row[1] + row[2] + row[3] + row[0]
+            text = row[1] + row[2] + row[3] + row[4] + row[5]
             yield text
 
 
@@ -74,6 +82,16 @@ def _create_data_from_csv(data_path):
             discuss = text_clean(tokenizer(row[5]))[:900]
 
             yield row[6], title_abstract, intro, method, results, discuss
+
+
+def _create_data_from_csv_abstract(data_path):
+    with io.open(data_path, encoding="utf8") as f:
+        next(f)
+        reader = unicode_csv_reader(f)
+        for row in reader:
+            title_abstract = text_clean(tokenizer(row[1]))
+
+            yield row[6], title_abstract
 
 
 class _RawTextIterableDataset(torch.utils.data.IterableDataset):
