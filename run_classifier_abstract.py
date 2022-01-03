@@ -231,7 +231,7 @@ if __name__ == "__main__":
     num_nodes = len(meshIDs)
 
     print('load pre-trained BioWord2Vec')
-    vocab_iterator = _RawTextIterableDataset(NUM_LINES['train'], _create_data_from_csv_vocab_abstarct(args.full_path))
+    vocab_iterator = _RawTextIterableDataset(NUM_LINES['train'], _create_data_from_csv_vocab_abstarct(args.train_path))
     cache, name = os.path.split(args.word2vec_path)
     vectors = Vectors(name=name, cache=cache)
     vocab = build_vocab_from_iterator(yield_tokens(vocab_iterator))
