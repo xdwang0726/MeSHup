@@ -219,18 +219,18 @@ if __name__ == "__main__":
     print('From Rank: {}, ==> Making model..'.format(rank))
     # Get dataset and label graph & Load pre-trained embeddings
 
-    NUM_LINES = {
-        'all': 957426,
-        'train': 765920,
-        'dev': 95737,
-        'test': 95769
-    }
     # NUM_LINES = {
-    #     'all': 1000,
-    #     'train': 70,
-    #     'dev': 20,
+    #     'all': 957426,
+    #     'train': 765920,
+    #     'dev': 95737,
     #     'test': 95769
     # }
+    NUM_LINES = {
+        'all': 1000,
+        'train': 7000,
+        'dev': 200,
+        'test': 95769
+    }
     print('load and prepare Mesh')
     # read full MeSH ID list
     mapping_id = {}
@@ -246,7 +246,7 @@ if __name__ == "__main__":
     num_nodes = len(meshIDs)
 
     print('load pre-trained BioWord2Vec')
-    vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], _create_data_from_csv_vocab(args.full_path))
+    vocab_iterator = _RawTextIterableDataset(NUM_LINES['train'], _create_data_from_csv_vocab(args.train_path))
     cache, name = os.path.split(args.word2vec_path)
     vectors = Vectors(name=name, cache=cache)
     vocab = build_vocab_from_iterator(yield_tokens(vocab_iterator))
@@ -262,7 +262,7 @@ if __name__ == "__main__":
     train_dataset = to_map_style_dataset(train_iterator)
     dev_dataset = to_map_style_dataset(dev_iterator)
 
-    model = multichannel_GCN(vocab_size, args.dropout, num_nodes)
+    model = multichannel_GCN(vocab_size, args.dropout, args.ksz, num_nodes)
     model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
 
     model.cuda()
