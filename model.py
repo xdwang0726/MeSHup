@@ -136,7 +136,7 @@ class multichannel_GCN(nn.Module):
 
 class multichannel_GCN_title_abstract(nn.Module):
     def __init__(self, vocab_size, dropout, ksz, output_size, embedding_dim=200, cornet_dim=1000, n_cornet_blocks=2):
-        super(multichannel_GCN, self).__init__()
+        super(multichannel_GCN_title_abstract, self).__init__()
 
         self.vocab_size = vocab_size
         self.dropout = dropout
