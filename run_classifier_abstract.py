@@ -204,18 +204,18 @@ if __name__ == "__main__":
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     print('Device:{}'.format(device))
 
-    # NUM_LINES = {
-    #     'all': 957426,
-    #     'train': 765920,
-    #     'dev': 95737,
-    #     'test': 95769
-    # }
     NUM_LINES = {
         'all': 957426,
-        'train': 2500,
-        'dev': 300,
+        'train': 765920,
+        'dev': 95737,
         'test': 95769
     }
+    # NUM_LINES = {
+    #     'all': 957426,
+    #     'train': 2500,
+    #     'dev': 300,
+    #     'test': 95769
+    # }
     print('load and prepare Mesh')
     # read full MeSH ID list
     mapping_id = {}
