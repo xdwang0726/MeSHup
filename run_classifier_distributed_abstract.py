@@ -164,6 +164,7 @@ if __name__ == "__main__":
     parser.add_argument('--device', default='cuda', type=str)
     parser.add_argument('--embedding_dim', type=int, default=200)
     parser.add_argument('--dropout', type=float, default=0.2)
+    parser.add_argument('--ksz', default=3)
 
     parser.add_argument('--num_epochs', type=int, default=20)
     parser.add_argument('--batch_sz', type=int, default=16)
