@@ -4,18 +4,16 @@ import random
 
 import dgl
 import numpy as np
+import torch.distributed as dist
 import torch.nn as nn
 from sklearn.preprocessing import MultiLabelBinarizer
-from torch.utils.data import DataLoader
-from torchtext.data.utils import get_tokenizer
-from torchtext.data.utils import ngrams_iterator
-from torchtext.vocab import Vectors
-from torchtext.vocab import build_vocab_from_iterator
+from torch.utils.data import DataLoader, DistributedSampler
+from torchtext.vocab import Vectors, build_vocab_from_iterator
 
 from model import multichannel_GCN
 from pytorchtools import EarlyStopping
 from util import *
-from util import _RawTextIterableDataset, _create_data_from_csv_abstract
+from util import _RawTextIterableDataset, _create_data_from_csv_vocab, _create_data_from_csv
 
 
 def set_seed(seed):
@@ -25,17 +23,6 @@ def set_seed(seed):
     torch.manual_seed(seed)  # cpu
     torch.cuda.manual_seed(seed)  # gpu
     torch.backends.cudnn.deterministic = True  # cudnn
-
-
-def _vocab_iterator(all_text, ngrams=1):
-
-    tokenizer = get_tokenizer('basic_english')
-
-    for i, text in enumerate(all_text):
-        texts_pre_article = ' '.join(text.values())
-        texts = tokenizer(texts_pre_article)
-        texts = text_clean(texts)
-        yield ngrams_iterator(texts, ngrams)
 
 
 def weight_matrix(vocab, vectors, dim=200):
@@ -61,7 +48,6 @@ def generate_batch(batch):
         l = l.replace(']', '')
         l = l.replace("'", '')
         l = l.split(',')
-        l = [item.strip() for item in l]
         label.append(l)
 
     title_abstract = [torch.tensor(convert_text_tokens(entry[1])) for entry in batch]
@@ -71,13 +57,13 @@ def generate_batch(batch):
 
 
 def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, criterion, device, num_workers, optimizer,
-          lr_scheduler):
+          lr_scheduler, world_size, rank):
 
-    train_data = DataLoader(train_dataset, batch_size=batch_sz, shuffle=True, collate_fn=generate_batch,
-                            num_workers=num_workers, pin_memory=True)
+    train_sampler = DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
+    valid_sampler = DistributedSampler(valid_dataset, num_replicas=world_size, rank=rank)
+    train_data = DataLoader(train_dataset, batch_size=batch_sz, sampler=train_sampler, collate_fn=generate_batch, num_workers=num_workers, pin_memory=True)
 
-    valid_data = DataLoader(valid_dataset, batch_size=batch_sz, shuffle=True, collate_fn=generate_batch,
-                            num_workers=num_workers, pin_memory=True)
+    valid_data = DataLoader(valid_dataset, batch_size=batch_sz, sampler=valid_sampler, collate_fn=generate_batch, num_workers=num_workers, pin_memory=True)
 
     print('train', len(train_data.dataset))
     # num_lines = num_epochs * len(train_data)
@@ -153,7 +139,7 @@ def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, cri
 
 
 def preallocate_gpu_memory(G, model, batch_sz, device, num_label, criterion):
-    sudo_abstract = torch.randint(10000, size=(batch_sz, 400), device=device)
+    sudo_abstract = torch.randint(123900, size=(batch_sz, 400), device=device)
     sudo_label = torch.randint(2, size=(batch_sz, num_label), device=device).type(torch.float)
     G, G.ndata['feat'] = G.to(device), G.ndata['feat'].to(device)
 
@@ -161,10 +147,6 @@ def preallocate_gpu_memory(G, model, batch_sz, device, num_label, criterion):
     loss = criterion(output, sudo_label)
     loss.backward()
     model.zero_grad()
-
-
-def _create_data_from_csv_vocab_abstarct(full_path):
-    pass
 
 
 if __name__ == "__main__":
@@ -181,11 +163,10 @@ if __name__ == "__main__":
     parser.add_argument('--device', default='cuda', type=str)
     parser.add_argument('--embedding_dim', type=int, default=200)
     parser.add_argument('--dropout', type=float, default=0.2)
-    parser.add_argument('--ksz', default=3)
 
     parser.add_argument('--num_epochs', type=int, default=20)
     parser.add_argument('--batch_sz', type=int, default=16)
-    parser.add_argument('--num_workers', type=int, default=4)
+    parser.add_argument('--num_workers', type=int, default=3)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--momentum', type=float, default=0.9)
     parser.add_argument('--weight_decay', type=float, default=0)
@@ -199,23 +180,37 @@ if __name__ == "__main__":
     args = parser.parse_args()
     set_seed(0)
     torch.backends.cudnn.benchmark = True
-    n_gpu = torch.cuda.device_count()  # check if it is multiple gpu
-    print('{} gpu is avaliable'.format(n_gpu))
-    device = torch.device(args.device if torch.cuda.is_available() else "cpu")
-    print('Device:{}'.format(device))
+    ngpus_per_node = torch.cuda.device_count()
+    print('number of gpus per node: %d' % ngpus_per_node)
+    world_size = int(os.environ['SLURM_NTASKS'])
+    local_rank = int(os.environ['SLURM_LOCALID'])
+    rank = int(os.environ.get("SLURM_NODEID")) * ngpus_per_node + int(local_rank)
 
-    # NUM_LINES = {
-    #     'all': 957426,
-    #     'train': 765920,
-    #     'dev': 95737,
-    #     'test': 95769
-    # }
+    available_gpus = list(os.environ.get('CUDA_VISIBLE_DEVICES').replace(',',""))  # check if it is multiple gpu
+    print('available gpus: ', available_gpus)
+    current_device = int(available_gpus[local_rank])
+    torch.cuda.set_device(current_device)
+
+    print('From Rank: {}, ==> Initializing Process Group...'.format(rank))
+    # init the process group
+    dist.init_process_group(backend=args.dist_backend, init_method=args.init_method, world_size=world_size, rank=rank)
+    print("process group ready!")
+
+    print('From Rank: {}, ==> Making model..'.format(rank))
+    # Get dataset and label graph & Load pre-trained embeddings
+
     NUM_LINES = {
         'all': 957426,
-        'train': 2500,
-        'dev': 300,
+        'train': 765920,
+        'dev': 95737,
         'test': 95769
     }
+    # NUM_LINES = {
+    #     'all': 1000,
+    #     'train': 70,
+    #     'dev': 20,
+    #     'test': 95769
+    # }
     print('load and prepare Mesh')
     # read full MeSH ID list
     mapping_id = {}
@@ -231,7 +226,7 @@ if __name__ == "__main__":
     num_nodes = len(meshIDs)
 
     print('load pre-trained BioWord2Vec')
-    vocab_iterator = _RawTextIterableDataset(NUM_LINES['train'], _create_data_from_csv_vocab_abstarct(args.full_path))
+    vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], _create_data_from_csv_vocab(args.full_path))
     cache, name = os.path.split(args.word2vec_path)
     vectors = Vectors(name=name, cache=cache)
     vocab = build_vocab_from_iterator(yield_tokens(vocab_iterator))
@@ -241,28 +236,32 @@ if __name__ == "__main__":
     G = dgl.load_graphs(args.graph)[0][0]
     print('graph', G.ndata['feat'].shape)
 
-    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], _create_data_from_csv_abstract(args.train_path))
-    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], _create_data_from_csv_abstract(args.dev_path))
+    def convert_text_tokens(text): return [vocab[token] for token in text]
+    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], _create_data_from_csv(args.train_path))
+    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], _create_data_from_csv(args.dev_path))
     train_dataset = to_map_style_dataset(train_iterator)
     dev_dataset = to_map_style_dataset(dev_iterator)
-    model = multichannel_GCN(vocab_size, args.dropout, args.ksz, num_nodes)
+
+    model = multichannel_GCN(vocab_size, args.dropout, num_nodes)
     model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
 
     model.cuda()
+    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[current_device], output_device=current_device)
+    print('From Rank: {}, ==> Preparing data..'.format(rank))
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.scheduler_step_sz, gamma=args.lr_gamma)
     criterion = nn.BCEWithLogitsLoss().cuda()
 
+
     # pre-allocate GPU memory
-    preallocate_gpu_memory(G, model, args.batch_sz, device, num_nodes, criterion)
-    print('pre-allocated GPU done')
+    # preallocate_gpu_memory(G, model, args.batch_sz, current_device, num_nodes, criterion)
 
     # training
     print("Start training!")
-    def convert_text_tokens(text): return [vocab[token] for token in text]
     model, train_loss, valid_loss = train(train_dataset, dev_dataset, model, mlb, G, args.batch_sz, args.num_epochs,
-                                          criterion, device, args.num_workers, optimizer, lr_scheduler)
+                                          criterion, current_device, args.num_workers, optimizer, lr_scheduler,
+                                          world_size, rank)
     print('Finish training!')
 
     print('save model for inference')
