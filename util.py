@@ -24,7 +24,7 @@ def _create_data_from_csv_vocab_abstract(data_path):
         next(f)
         reader = unicode_csv_reader(f)
         for row in reader:
-            text = row[1]
+            text = row[1][:500]
             yield text
 
 
