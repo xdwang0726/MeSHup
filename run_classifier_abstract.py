@@ -193,7 +193,7 @@ if __name__ == "__main__":
     parser.add_argument('--dist_backend', default='nccl', type=str, help='distributed backend')
 
     args = parser.parse_args()
-    set_seed(0)
+    set_seed(42)
     torch.backends.cudnn.benchmark = True
     n_gpu = torch.cuda.device_count()  # check if it is multiple gpu
     print('{} gpu is avaliable'.format(n_gpu))
