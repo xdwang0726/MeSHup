@@ -258,13 +258,17 @@ if __name__ == "__main__":
     print('Load graph')
     G = dgl.load_graphs(args.graph)[0][0]
     print('graph', G.ndata['feat'].shape)
+    print('finish loading the graph')
 
     def convert_text_tokens(text): return [vocab[token] for token in text]
     train_iterator = _RawTextIterableDataset(NUM_LINES['train'], _create_data_from_csv(args.train_path))
     dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], _create_data_from_csv(args.dev_path))
+    print('Loading the training set')
     train_dataset = to_map_style_dataset(train_iterator)
+    print('Loading the dev set')
     dev_dataset = to_map_style_dataset(dev_iterator)
 
+    print('Initializing the model')
     model = multichannel_GCN(vocab_size, args.dropout, args.ksz, num_nodes)
     model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
 
