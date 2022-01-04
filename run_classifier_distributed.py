@@ -74,7 +74,6 @@ def generate_batch(batch):
     return label, title_abstract, intro, method, result, discuss
 
 
-
 def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, criterion, device, num_workers, optimizer,
           lr_scheduler, world_size, rank):
 
@@ -230,9 +229,9 @@ if __name__ == "__main__":
     #     'test': 95769
     # }
     NUM_LINES = {
-        'all': 1000,
-        'train': 700,
-        'dev': 200,
+        'all': 957426,
+        'train': 100000,
+        'dev': 9000,
         'test': 95769
     }
     print('load and prepare Mesh')
