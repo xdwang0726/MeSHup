@@ -163,10 +163,6 @@ def preallocate_gpu_memory(G, model, batch_sz, device, num_label, criterion):
     model.zero_grad()
 
 
-def _create_data_from_csv_vocab_abstarct(full_path):
-    pass
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--full_path')
@@ -204,18 +200,18 @@ if __name__ == "__main__":
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     print('Device:{}'.format(device))
 
-    NUM_LINES = {
-        'all': 957426,
-        'train': 765920,
-        'dev': 95737,
-        'test': 95769
-    }
     # NUM_LINES = {
     #     'all': 957426,
-    #     'train': 2500,
-    #     'dev': 300,
+    #     'train': 765920,
+    #     'dev': 95737,
     #     'test': 95769
     # }
+    NUM_LINES = {
+        'all': 7659,
+        'train': 2500,
+        'dev': 300,
+        'test': 95769
+    }
     print('load and prepare Mesh')
     # read full MeSH ID list
     mapping_id = {}
@@ -231,7 +227,7 @@ if __name__ == "__main__":
     num_nodes = len(meshIDs)
 
     print('load pre-trained BioWord2Vec')
-    vocab_iterator = _RawTextIterableDataset(NUM_LINES['train'], _create_data_from_csv_vocab_abstract(args.train_path))
+    vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], _create_data_from_csv_vocab_abstract(args.train_path))
     cache, name = os.path.split(args.word2vec_path)
     vectors = Vectors(name=name, cache=cache)
     vocab = build_vocab_from_iterator(yield_tokens(vocab_iterator))
