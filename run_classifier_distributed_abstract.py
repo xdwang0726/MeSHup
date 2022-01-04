@@ -49,6 +49,7 @@ def generate_batch(batch):
         l = l.replace(']', '')
         l = l.replace("'", '')
         l = l.split(',')
+        l = [item.strip() for item in l]
         label.append(l)
 
     title_abstract = [torch.tensor(convert_text_tokens(entry[1])) for entry in batch]

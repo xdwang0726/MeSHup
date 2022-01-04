@@ -52,6 +52,7 @@ def generate_batch(batch):
         l = l.replace(']', '')
         l = l.replace("'", '')
         l = l.split(',')
+        l = [item.strip() for item in l]
         label.append(l)
 
     title_abstract = [torch.tensor(convert_text_tokens(entry[1])) for entry in batch]
@@ -67,9 +68,11 @@ def generate_batch(batch):
     result = pad_sequence(result, ksz=3, batch_first=True)
 
     discuss = [torch.tensor(convert_text_tokens(entry[5])) for entry in batch]
+
     discuss = pad_sequence(discuss, ksz=3, batch_first=True)
 
     return label, title_abstract, intro, method, result, discuss
+
 
 
 def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, criterion, device, num_workers, optimizer,
