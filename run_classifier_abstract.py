@@ -173,6 +173,7 @@ if __name__ == "__main__":
     parser.add_argument('--meSH_pair_path')
     parser.add_argument('--graph')
     parser.add_argument('--save-model-path')
+    parser.add_argument('--model')
 
     parser.add_argument('--device', default='cuda', type=str)
     parser.add_argument('--embedding_dim', type=int, default=200)
@@ -208,8 +209,8 @@ if __name__ == "__main__":
     # }
     NUM_LINES = {
         'all': 765920,
-        'train': 250000,
-        'dev': 30000,
+        'train': 765920,
+        'dev': 95737,
         'test': 95769
     }
     print('load and prepare Mesh')
@@ -253,6 +254,10 @@ if __name__ == "__main__":
     # pre-allocate GPU memory
     preallocate_gpu_memory(G, model, args.batch_sz, device, num_nodes, criterion)
     print('pre-allocated GPU done')
+
+    # load model
+    # model.load_state_dict(torch.load(args.model))
+    # model.to(device)
 
     # training
     print("Start training!")
