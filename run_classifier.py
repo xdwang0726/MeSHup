@@ -205,7 +205,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--num_epochs', type=int, default=10)
     parser.add_argument('--batch_sz', type=int, default=16)
-    parser.add_argument('--num_workers', type=int, default=4)
+    parser.add_argument('--num_workers', type=int, default=8)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--momentum', type=float, default=0.9)
     parser.add_argument('--weight_decay', type=float, default=0)
@@ -217,7 +217,7 @@ if __name__ == "__main__":
     parser.add_argument('--dist_backend', default='nccl', type=str, help='distributed backend')
 
     args = parser.parse_args()
-    set_seed(0)
+    set_seed(42)
     torch.backends.cudnn.benchmark = True
     n_gpu = torch.cuda.device_count()  # check if it is multiple gpu
     print('{} gpu is avaliable'.format(n_gpu))
@@ -232,8 +232,8 @@ if __name__ == "__main__":
     # }
     NUM_LINES = {
         'all': 765920,
-        'train': 250000,
-        'dev': 30000,
+        'train': 150000,
+        'dev': 19000,
         'test': 95769
     }
     print('load and prepare Mesh')
