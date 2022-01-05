@@ -251,11 +251,11 @@ if __name__ == "__main__":
     num_nodes = len(meshIDs)
 
     print('load pre-trained BioWord2Vec')
-    vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], None, _create_data_from_csv_vocab(args.train_path))
-    cache, name = os.path.split(args.word2vec_path)
-    vectors = Vectors(name=name, cache=cache)
-    vocab = build_vocab_from_iterator(yield_tokens(vocab_iterator))
-    vocab_size = len(vocab)
+    # vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], None, _create_data_from_csv_vocab(args.train_path))
+    # cache, name = os.path.split(args.word2vec_path)
+    # vectors = Vectors(name=name, cache=cache)
+    # vocab = build_vocab_from_iterator(yield_tokens(vocab_iterator))
+    # vocab_size = len(vocab)
 
     print('Load graph')
     G = dgl.load_graphs(args.graph)[0][0]
@@ -267,8 +267,8 @@ if __name__ == "__main__":
     # train_dataset = to_map_style_dataset(train_iterator)
     # print('Loading the dev set')
     # dev_dataset = to_map_style_dataset(dev_iterator)
-    model = multichannel_GCN(vocab_size, args.dropout, args.ksz, num_nodes)
-    model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
+    model = multichannel_GCN(699942, args.dropout, args.ksz, num_nodes)
+    # model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
 
     model.cuda()
 
