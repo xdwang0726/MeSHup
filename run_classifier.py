@@ -79,14 +79,11 @@ def generate_batch(batch):
 
     method = [torch.tensor(convert_text_tokens(entry[3])) for entry in batch]
     method = pad_sequence(method, ksz=3, batch_first=True)
-    print('discuss', method.get_device())
 
     result = [torch.tensor(convert_text_tokens(entry[4])) for entry in batch]
     result = pad_sequence(result, ksz=3, batch_first=True)
-    print('discuss', result.get_device())
 
     discuss = [torch.tensor(convert_text_tokens(entry[5])) for entry in batch]
-
     discuss = pad_sequence(discuss, ksz=3, batch_first=True)
     print('discuss', discuss.get_device())
 
@@ -120,6 +117,7 @@ def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, cri
             label = label.to(device)
 
             abstract, intro, method, results, discuss = abstract.to(device), intro.to(device), method.to(device), results.to(device), discuss.to(device)
+            print('ab', abstract.get_device())
             G, G.ndata['feat'] = G.to(device), G.ndata['feat'].to(device)
 
             output = model(abstract, intro, method, results, discuss, G, G.ndata['feat'])
