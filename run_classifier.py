@@ -267,6 +267,7 @@ if __name__ == "__main__":
     print('Loading the dev set')
     dev_dataset = to_map_style_dataset(dev_iterator)
     model = multichannel_GCN(vocab_size, args.dropout, args.ksz, num_nodes)
+    print('embedding')
     model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
 
     model.cuda()
