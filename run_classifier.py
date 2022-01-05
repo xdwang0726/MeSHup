@@ -263,7 +263,9 @@ if __name__ == "__main__":
 
     train_iterator = _RawTextIterableDataset(NUM_LINES['all'], None, _create_data_from_csv(args.train_path))
     dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], None, _create_data_from_csv(args.dev_path))
+    print('Loading the training set')
     train_dataset = to_map_style_dataset(train_iterator)
+    print('Loading the dev set')
     dev_dataset = to_map_style_dataset(dev_iterator)
     model = multichannel_GCN(vocab_size, args.dropout, args.ksz, num_nodes)
     model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
