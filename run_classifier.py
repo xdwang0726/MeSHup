@@ -261,7 +261,7 @@ if __name__ == "__main__":
     G = dgl.load_graphs(args.graph)[0][0]
     print('graph', G.ndata['feat'].shape)
 
-    train_iterator = _RawTextIterableDataset(NUM_LINES['all'], None, _create_data_from_csv(args.train_path))
+    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], None, _create_data_from_csv(args.train_path))
     dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], None, _create_data_from_csv(args.dev_path))
     print('Loading the training set')
     train_dataset = to_map_style_dataset(train_iterator)
