@@ -228,7 +228,7 @@ if __name__ == "__main__":
     num_nodes = len(meshIDs)
 
     print('load pre-trained BioWord2Vec')
-    vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], _create_data_from_csv_vocab_abstract(args.train_path))
+    vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], 0, _create_data_from_csv_vocab_abstract(args.train_path))
     cache, name = os.path.split(args.word2vec_path)
     vectors = Vectors(name=name, cache=cache)
     vocab = build_vocab_from_iterator(yield_tokens(vocab_iterator))
@@ -238,8 +238,8 @@ if __name__ == "__main__":
     G = dgl.load_graphs(args.graph)[0][0]
     print('graph', G.ndata['feat'].shape)
 
-    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], _create_data_from_csv_abstract(args.train_path))
-    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], _create_data_from_csv_abstract(args.dev_path))
+    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], 250000, _create_data_from_csv_abstract(args.train_path))
+    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], 30000, _create_data_from_csv_abstract(args.dev_path))
     train_dataset = to_map_style_dataset(train_iterator)
     dev_dataset = to_map_style_dataset(dev_iterator)
     model = multichannel_GCN_title_abstract(vocab_size, args.dropout, args.ksz, num_nodes)
@@ -252,12 +252,12 @@ if __name__ == "__main__":
     criterion = nn.BCEWithLogitsLoss().cuda()
 
     # pre-allocate GPU memory
-    preallocate_gpu_memory(G, model, args.batch_sz, device, num_nodes, criterion)
-    print('pre-allocated GPU done')
+    #preallocate_gpu_memory(G, model, args.batch_sz, device, num_nodes, criterion)
+    #print('pre-allocated GPU done')
 
     # load model
-    # model.load_state_dict(torch.load(args.model))
-    # model.to(device)
+    model.load_state_dict(torch.load(args.model))
+    model.to(device)
 
     # training
     print("Start training!")

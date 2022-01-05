@@ -99,14 +99,14 @@ class _RawTextIterableDataset(torch.utils.data.IterableDataset):
     """Defines an abstraction for raw text iterable datasets.
     """
 
-    def __init__(self, full_num_lines, iterator):
+    def __init__(self, full_num_lines, current_pos, iterator):
         """Initiate the dataset abstraction.
         """
         super(_RawTextIterableDataset, self).__init__()
         self.full_num_lines = full_num_lines
         self._iterator = iterator
         self.num_lines = full_num_lines
-        self.current_pos = None
+        self.current_pos = current_pos
 
     def __iter__(self):
         return self
