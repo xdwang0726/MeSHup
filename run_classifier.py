@@ -260,13 +260,13 @@ if __name__ == "__main__":
     print('Load graph')
     G = dgl.load_graphs(args.graph)[0][0]
     print('graph', G.ndata['feat'].shape)
-
-    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], None, _create_data_from_csv(args.train_path))
-    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], None, _create_data_from_csv(args.dev_path))
-    print('Loading the training set')
-    train_dataset = to_map_style_dataset(train_iterator)
-    print('Loading the dev set')
-    dev_dataset = to_map_style_dataset(dev_iterator)
+    #
+    # train_iterator = _RawTextIterableDataset(NUM_LINES['train'], None, _create_data_from_csv(args.train_path))
+    # dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], None, _create_data_from_csv(args.dev_path))
+    # print('Loading the training set')
+    # train_dataset = to_map_style_dataset(train_iterator)
+    # print('Loading the dev set')
+    # dev_dataset = to_map_style_dataset(dev_iterator)
     model = multichannel_GCN(vocab_size, args.dropout, args.ksz, num_nodes)
     model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
 
@@ -281,12 +281,12 @@ if __name__ == "__main__":
     print('pre-allocated GPU done')
 
     # training
-    print("Start training!")
-    def convert_text_tokens(text): return [vocab[token] for token in text]
-    model, train_loss, valid_loss = train(train_dataset, dev_dataset, model, mlb, G, args.batch_sz, args.num_epochs,
-                                          criterion, device, args.num_workers, optimizer, lr_scheduler)
-    print('Finish training!')
-
-    print('save model for inference')
-    torch.save(model.state_dict(), args.save_model_path)
+    # print("Start training!")
+    # def convert_text_tokens(text): return [vocab[token] for token in text]
+    # model, train_loss, valid_loss = train(train_dataset, dev_dataset, model, mlb, G, args.batch_sz, args.num_epochs,
+    #                                       criterion, device, args.num_workers, optimizer, lr_scheduler)
+    # print('Finish training!')
+    #
+    # print('save model for inference')
+    # torch.save(model.state_dict(), args.save_model_path)
 
