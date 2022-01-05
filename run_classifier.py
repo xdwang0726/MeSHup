@@ -276,7 +276,7 @@ if __name__ == "__main__":
     criterion = nn.BCEWithLogitsLoss().cuda()
 
     # pre-allocate GPU memory
-    preallocate_gpu_memory(G, model, args.batch_sz, device, num_nodes, criterion)
+    # preallocate_gpu_memory(G, model, args.batch_sz, device, num_nodes, criterion)
     print('pre-allocated GPU done')
 
     # training
