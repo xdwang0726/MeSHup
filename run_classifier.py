@@ -251,7 +251,7 @@ if __name__ == "__main__":
     num_nodes = len(meshIDs)
 
     print('load pre-trained BioWord2Vec')
-    vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], _create_data_from_csv_vocab(args.train_path))
+    vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], None, _create_data_from_csv_vocab(args.train_path))
     cache, name = os.path.split(args.word2vec_path)
     vectors = Vectors(name=name, cache=cache)
     vocab = build_vocab_from_iterator(yield_tokens(vocab_iterator))
@@ -261,8 +261,8 @@ if __name__ == "__main__":
     G = dgl.load_graphs(args.graph)[0][0]
     print('graph', G.ndata['feat'].shape)
 
-    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], _create_data_from_csv(args.train_path))
-    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], _create_data_from_csv(args.dev_path))
+    train_iterator = _RawTextIterableDataset(NUM_LINES['all'], None, _create_data_from_csv(args.train_path))
+    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], None, _create_data_from_csv(args.dev_path))
     train_dataset = to_map_style_dataset(train_iterator)
     dev_dataset = to_map_style_dataset(dev_iterator)
     model = multichannel_GCN(vocab_size, args.dropout, args.ksz, num_nodes)
