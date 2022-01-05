@@ -208,7 +208,7 @@ if __name__ == "__main__":
     #     'test': 95769
     # }
     NUM_LINES = {
-        'all': 7659,
+        'all': 765920,
         'train': 765,
         'dev': 95,
         'test': 95769
