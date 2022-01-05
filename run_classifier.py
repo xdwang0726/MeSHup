@@ -79,13 +79,16 @@ def generate_batch(batch):
 
     method = [torch.tensor(convert_text_tokens(entry[3])) for entry in batch]
     method = pad_sequence(method, ksz=3, batch_first=True)
+    print('discuss', method.get_device())
 
     result = [torch.tensor(convert_text_tokens(entry[4])) for entry in batch]
     result = pad_sequence(result, ksz=3, batch_first=True)
+    print('discuss', result.get_device())
 
     discuss = [torch.tensor(convert_text_tokens(entry[5])) for entry in batch]
 
     discuss = pad_sequence(discuss, ksz=3, batch_first=True)
+    print('discuss', discuss.get_device())
 
     return label, title_abstract, intro, method, result, discuss
 
@@ -231,9 +234,9 @@ if __name__ == "__main__":
     #     'test': 95769
     # }
     NUM_LINES = {
-        'all': 765920,
-        'train': 150000,
-        'dev': 19000,
+        'all': 765,
+        'train': 15,
+        'dev': 19,
         'test': 95769
     }
     print('load and prepare Mesh')
@@ -251,24 +254,24 @@ if __name__ == "__main__":
     num_nodes = len(meshIDs)
 
     print('load pre-trained BioWord2Vec')
-    # vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], None, _create_data_from_csv_vocab(args.train_path))
-    # cache, name = os.path.split(args.word2vec_path)
-    # vectors = Vectors(name=name, cache=cache)
-    # vocab = build_vocab_from_iterator(yield_tokens(vocab_iterator))
-    # vocab_size = len(vocab)
+    vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], None, _create_data_from_csv_vocab(args.train_path))
+    cache, name = os.path.split(args.word2vec_path)
+    vectors = Vectors(name=name, cache=cache)
+    vocab = build_vocab_from_iterator(yield_tokens(vocab_iterator))
+    vocab_size = len(vocab)
 
     print('Load graph')
     G = dgl.load_graphs(args.graph)[0][0]
     print('graph', G.ndata['feat'].shape)
-    #
-    # train_iterator = _RawTextIterableDataset(NUM_LINES['train'], None, _create_data_from_csv(args.train_path))
-    # dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], None, _create_data_from_csv(args.dev_path))
-    # print('Loading the training set')
-    # train_dataset = to_map_style_dataset(train_iterator)
-    # print('Loading the dev set')
-    # dev_dataset = to_map_style_dataset(dev_iterator)
-    model = multichannel_GCN(699942, args.dropout, args.ksz, num_nodes)
-    # model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
+
+    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], None, _create_data_from_csv(args.train_path))
+    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], None, _create_data_from_csv(args.dev_path))
+    print('Loading the training set')
+    train_dataset = to_map_style_dataset(train_iterator)
+    print('Loading the dev set')
+    dev_dataset = to_map_style_dataset(dev_iterator)
+    model = multichannel_GCN(vocab_size, args.dropout, args.ksz, num_nodes)
+    model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
 
     model.cuda()
 
@@ -281,12 +284,12 @@ if __name__ == "__main__":
     print('pre-allocated GPU done')
 
     # training
-    # print("Start training!")
-    # def convert_text_tokens(text): return [vocab[token] for token in text]
-    # model, train_loss, valid_loss = train(train_dataset, dev_dataset, model, mlb, G, args.batch_sz, args.num_epochs,
-    #                                       criterion, device, args.num_workers, optimizer, lr_scheduler)
-    # print('Finish training!')
-    #
-    # print('save model for inference')
-    # torch.save(model.state_dict(), args.save_model_path)
+    print("Start training!")
+    def convert_text_tokens(text): return [vocab[token] for token in text]
+    model, train_loss, valid_loss = train(train_dataset, dev_dataset, model, mlb, G, args.batch_sz, args.num_epochs,
+                                          criterion, device, args.num_workers, optimizer, lr_scheduler)
+    print('Finish training!')
+
+    print('save model for inference')
+    torch.save(model.state_dict(), args.save_model_path)
 
