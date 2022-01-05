@@ -229,9 +229,9 @@ if __name__ == "__main__":
     #     'test': 95769
     # }
     NUM_LINES = {
-        'all': 765920,
-        'train': 100000,
-        'dev': 15000,
+        'all': 765,
+        'train': 250,
+        'dev': 30,
         'test': 95769
     }
     print('load and prepare Mesh')
@@ -282,7 +282,7 @@ if __name__ == "__main__":
 
 
     # pre-allocate GPU memory
-    # preallocate_gpu_memory(G, model, args.batch_sz, current_device, num_nodes, criterion)
+    preallocate_gpu_memory(G, model, args.batch_sz, current_device, num_nodes, criterion)
 
     # training
     print("Start training!")
