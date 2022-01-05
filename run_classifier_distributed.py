@@ -249,7 +249,7 @@ if __name__ == "__main__":
     num_nodes = len(meshIDs)
 
     print('load pre-trained BioWord2Vec')
-    vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], _create_data_from_csv_vocab(args.train_path))
+    vocab_iterator = _RawTextIterableDataset(NUM_LINES['all'], 0, _create_data_from_csv_vocab(args.train_path))
     cache, name = os.path.split(args.word2vec_path)
     vectors = Vectors(name=name, cache=cache)
     vocab = build_vocab_from_iterator(yield_tokens(vocab_iterator))
@@ -261,8 +261,8 @@ if __name__ == "__main__":
     print('finish loading the graph')
 
     def convert_text_tokens(text): return [vocab[token] for token in text]
-    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], _create_data_from_csv(args.train_path))
-    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], _create_data_from_csv(args.dev_path))
+    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], 0, _create_data_from_csv(args.train_path))
+    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], 0, _create_data_from_csv(args.dev_path))
     print('Loading the training set')
     train_dataset = to_map_style_dataset(train_iterator)
     print('Loading the dev set')
