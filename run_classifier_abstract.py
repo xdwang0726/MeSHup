@@ -209,8 +209,8 @@ if __name__ == "__main__":
     # }
     NUM_LINES = {
         'all': 765920,
-        'train': 765,
-        'dev': 95,
+        'train': 500000,
+        'dev': 60000,
         'test': 95769
     }
     print('load and prepare Mesh')
@@ -238,8 +238,8 @@ if __name__ == "__main__":
     G = dgl.load_graphs(args.graph)[0][0]
     print('graph', G.ndata['feat'].shape)
 
-    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], 250, _create_data_from_csv_abstract(args.train_path))
-    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], 30, _create_data_from_csv_abstract(args.dev_path))
+    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], 250000, _create_data_from_csv_abstract(args.train_path))
+    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], 30000, _create_data_from_csv_abstract(args.dev_path))
     train_dataset = to_map_style_dataset(train_iterator)
     dev_dataset = to_map_style_dataset(dev_iterator)
     model = multichannel_GCN_title_abstract(vocab_size, args.dropout, args.ksz, num_nodes)
