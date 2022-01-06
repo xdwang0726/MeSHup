@@ -231,8 +231,8 @@ if __name__ == "__main__":
     # }
     NUM_LINES = {
         'all': 500000,
-        'train': 50000,
-        'dev': 6000,
+        'train': 10000,
+        'dev': 1200,
         'test': 95769
     }
     print('load and prepare Mesh')
@@ -255,6 +255,7 @@ if __name__ == "__main__":
     vectors = Vectors(name=name, cache=cache)
     vocab = build_vocab_from_iterator(yield_tokens(vocab_iterator))
     vocab_size = len(vocab)
+    print('Vocabulary', vocab_size)
 
     print('Load graph')
     G = dgl.load_graphs(args.graph)[0][0]
