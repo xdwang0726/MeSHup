@@ -271,23 +271,23 @@ if __name__ == "__main__":
     print('embedding')
     model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
 
-    model.cuda()
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.scheduler_step_sz, gamma=args.lr_gamma)
-    criterion = nn.BCEWithLogitsLoss().cuda()
-
-    # pre-allocate GPU memory
-    # preallocate_gpu_memory(G, model, args.batch_sz, device, num_nodes, criterion)
-    print('pre-allocated GPU done')
+    # model.cuda()
+    #
+    # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.scheduler_step_sz, gamma=args.lr_gamma)
+    # criterion = nn.BCEWithLogitsLoss().cuda()
+    #
+    # # pre-allocate GPU memory
+    # # preallocate_gpu_memory(G, model, args.batch_sz, device, num_nodes, criterion)
+    # print('pre-allocated GPU done')
 
     # training
     print("Start training!")
-    def convert_text_tokens(text): return [vocab[token] for token in text]
-    model, train_loss, valid_loss = train(train_dataset, dev_dataset, model, mlb, G, args.batch_sz, args.num_epochs,
-                                          criterion, device, args.num_workers, optimizer, lr_scheduler)
-    print('Finish training!')
-
-    print('save model for inference')
-    torch.save(model.state_dict(), args.save_model_path)
+    # def convert_text_tokens(text): return [vocab[token] for token in text]
+    # model, train_loss, valid_loss = train(train_dataset, dev_dataset, model, mlb, G, args.batch_sz, args.num_epochs,
+    #                                       criterion, device, args.num_workers, optimizer, lr_scheduler)
+    # print('Finish training!')
+    #
+    # print('save model for inference')
+    # torch.save(model.state_dict(), args.save_model_path)
 
