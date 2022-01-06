@@ -261,16 +261,25 @@ if __name__ == "__main__":
     G = dgl.load_graphs(args.graph)[0][0]
     print('graph', G.ndata['feat'].shape)
 
-    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], None, _create_data_from_csv(args.train_path))
-    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], None, _create_data_from_csv(args.dev_path))
-    print('Loading the training set')
-    train_dataset = to_map_style_dataset(train_iterator)
-    print('Loading the dev set')
-    dev_dataset = to_map_style_dataset(dev_iterator)
+    # train_iterator = _RawTextIterableDataset(NUM_LINES['train'], None, _create_data_from_csv(args.train_path))
+    # dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], None, _create_data_from_csv(args.dev_path))
+    # print('Loading the training set')
+    # train_dataset = to_map_style_dataset(train_iterator)
+    # print('Loading the dev set')
+    # dev_dataset = to_map_style_dataset(dev_iterator)
     model = multichannel_GCN(vocab_size, args.dropout, args.ksz, num_nodes)
     print('embedding')
-    model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
+    model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors))
 
+    sudo_abstract = torch.randint(10000, size=(args.batch_sz, 200))
+    sudo_intro = torch.randint(10000, size=(args.batch_sz, 500))
+    sudo_method = torch.randint(10000, size=(args.batch_sz, 1000))
+    sudo_results = torch.randint(10000, size=(args.batch_sz, 800))
+    sudo_discuss = torch.randint(10000, size=(args.batch_sz, 800))
+    sudo_label = torch.randint(2, size=(args.batch_sz, num_nodes)).type(torch.float)
+
+    from torchsummary import summary
+    summary(model, sudo_abstract, sudo_intro, sudo_method, sudo_results, sudo_discuss, G, G.ndata['feat'])
     # model.cuda()
     #
     # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
