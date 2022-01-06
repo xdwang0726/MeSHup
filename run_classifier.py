@@ -74,19 +74,20 @@ def generate_batch(batch):
     title_abstract = [torch.tensor(convert_text_tokens(entry[1])) for entry in batch]
     title_abstract = pad_sequence(title_abstract, ksz=3, batch_first=True)
 
-    intro = [torch.tensor(convert_text_tokens(entry[2])) for entry in batch]
-    intro = pad_sequence(intro, ksz=3, batch_first=True)
+    # intro = [torch.tensor(convert_text_tokens(entry[2])) for entry in batch]
+    # intro = pad_sequence(intro, ksz=3, batch_first=True)
 
     method = [torch.tensor(convert_text_tokens(entry[3])) for entry in batch]
     method = pad_sequence(method, ksz=3, batch_first=True)
 
-    result = [torch.tensor(convert_text_tokens(entry[4])) for entry in batch]
-    result = pad_sequence(result, ksz=3, batch_first=True)
+    # result = [torch.tensor(convert_text_tokens(entry[4])) for entry in batch]
+    # result = pad_sequence(result, ksz=3, batch_first=True)
+    #
+    # discuss = [torch.tensor(convert_text_tokens(entry[5])) for entry in batch]
+    # discuss = pad_sequence(discuss, ksz=3, batch_first=True)
 
-    discuss = [torch.tensor(convert_text_tokens(entry[5])) for entry in batch]
-    discuss = pad_sequence(discuss, ksz=3, batch_first=True)
-
-    return label, title_abstract, intro, method, result, discuss
+    # return label, title_abstract, intro, method, result, discuss
+    return label, title_abstract, method
 
 
 def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, criterion, device, num_workers, optimizer,
@@ -111,14 +112,17 @@ def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, cri
     print("Training....")
     for epoch in range(num_epochs):
         model.train()  # prep model for training
-        for i, (label, abstract, intro, method, results, discuss) in enumerate(train_data):
+        # for i, (label, abstract, intro, method, results, discuss) in enumerate(train_data):
+        for i, (label, abstract, method) in enumerate(train_data):
             label = torch.from_numpy(mlb.fit_transform(label)).type(torch.float)
             label = label.to(device)
 
-            abstract, intro, method, results, discuss = abstract.to(device), intro.to(device), method.to(device), results.to(device), discuss.to(device)
+            # abstract, intro, method, results, discuss = abstract.to(device), intro.to(device), method.to(device), results.to(device), discuss.to(device)
+            abstract, method= abstract.to(device), method.to(device)
             G, G.ndata['feat'] = G.to(device), G.ndata['feat'].to(device)
 
-            output = model(abstract, intro, method, results, discuss, G, G.ndata['feat'])
+            # output = model(abstract, intro, method, results, discuss, G, G.ndata['feat'])
+            output = model(abstract, method, G, G.ndata['feat'])
             loss = criterion(output, label)
 
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5)
@@ -134,15 +138,17 @@ def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, cri
 
         with torch.no_grad():
             model.eval()
-            for i, (label, abstract, intro, method, results, discuss) in enumerate(valid_data):
+            # for i, (label, abstract, intro, method, results, discuss) in enumerate(valid_data):
+            for i, (label, abstract, method) in enumerate(train_data):
                 label = torch.from_numpy(mlb.fit_transform(label)).type(torch.float)
                 label = label.to(device)
 
-                abstract, intro, method, results, discuss = abstract.to(device), intro.to(device), method.to(device), results.to(device), discuss.to(device)
+                # abstract, intro, method, results, discuss = abstract.to(device), intro.to(device), method.to(device), results.to(device), discuss.to(device)
+                abstract, method= abstract.to(device), method.to(device)
                 G, G.ndata['feat'] = G.to(device), G.ndata['feat'].to(device)
 
-                output = model(abstract, intro, method, results, discuss, G, G.ndata['feat'])
-
+                # output = model(abstract, intro, method, results, discuss, G, G.ndata['feat'])
+                output = model(abstract, method, G, G.ndata['feat'])
                 loss = criterion(output, label)
                 valid_losses.append(loss.item())
 
@@ -172,15 +178,16 @@ def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, cri
 
 
 def preallocate_gpu_memory(G, model, batch_sz, device, num_label, criterion):
-    sudo_abstract = torch.randint(10000, size=(batch_sz, 200), device=device)
-    sudo_intro = torch.randint(10000, size=(batch_sz, 500), device=device)
-    sudo_method = torch.randint(10000, size=(batch_sz, 1000), device=device)
-    sudo_results = torch.randint(10000, size=(batch_sz, 800), device=device)
-    sudo_discuss = torch.randint(10000, size=(batch_sz, 800), device=device)
+    sudo_abstract = torch.randint(10000, size=(batch_sz, 400), device=device)
+    # sudo_intro = torch.randint(10000, size=(batch_sz, 500), device=device)
+    sudo_method = torch.randint(10000, size=(batch_sz, 1500), device=device)
+    # sudo_results = torch.randint(10000, size=(batch_sz, 800), device=device)
+    # sudo_discuss = torch.randint(10000, size=(batch_sz, 800), device=device)
     sudo_label = torch.randint(2, size=(batch_sz, num_label), device=device).type(torch.float)
     G, G.ndata['feat'] = G.to(device), G.ndata['feat'].to(device)
 
-    output = model(sudo_abstract, sudo_intro, sudo_method, sudo_results, sudo_discuss, G, G.ndata['feat'])
+    # output = model(sudo_abstract, sudo_intro, sudo_method, sudo_results, sudo_discuss, G, G.ndata['feat'])
+    output = model(sudo_abstract, sudo_method, G, G.ndata['feat'])
     loss = criterion(output, sudo_label)
     loss.backward()
     model.zero_grad()
@@ -230,9 +237,9 @@ if __name__ == "__main__":
     #     'test': 95769
     # }
     NUM_LINES = {
-        'all': 250000,
-        'train': 50000,
-        'dev': 6000,
+        'all': 765920,
+        'train': 250000,
+        'dev': 30000,
         'test': 95769
     }
     print('load and prepare Mesh')

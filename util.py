@@ -33,7 +33,8 @@ def _create_data_from_csv_vocab(data_path):
         next(f)
         reader = unicode_csv_reader(f)
         for row in reader:
-            text = row[1] + row[2] + row[3] + row[4] + row[5]
+            # text = row[1] + row[2] + row[3] + row[4] + row[5]
+            text = row[1] + row[3]
             yield text
 
 
@@ -76,13 +77,14 @@ def _create_data_from_csv(data_path):
         next(f)
         reader = unicode_csv_reader(f)
         for row in reader:
-            title_abstract = text_clean(tokenizer(row[1]))[:200]
-            intro = text_clean(tokenizer(row[2]))[:500]
-            method = text_clean(tokenizer(row[3]))[:1000]
-            results = text_clean(tokenizer(row[4]))[:800]
-            discuss = text_clean(tokenizer(row[5]))[:800]
+            title_abstract = text_clean(tokenizer(row[1]))[:400]
+            # intro = text_clean(tokenizer(row[2]))[:500]
+            method = text_clean(tokenizer(row[3]))[:1500]
+            # results = text_clean(tokenizer(row[4]))[:800]
+            # discuss = text_clean(tokenizer(row[5]))[:800]
 
-            yield row[6], title_abstract, intro, method, results, discuss
+            # yield row[6], title_abstract, intro, method, results, discuss
+            yield row[6], title_abstract, method
 
 
 def _create_data_from_csv_abstract(data_path):
