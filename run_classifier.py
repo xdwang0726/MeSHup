@@ -180,7 +180,7 @@ def train(train_dataset, valid_dataset, model, mlb, G, batch_sz, num_epochs, cri
 def preallocate_gpu_memory(G, model, batch_sz, device, num_label, criterion):
     sudo_abstract = torch.randint(10000, size=(batch_sz, 400), device=device)
     # sudo_intro = torch.randint(10000, size=(batch_sz, 500), device=device)
-    sudo_method = torch.randint(10000, size=(batch_sz, 1500), device=device)
+    sudo_method = torch.randint(10000, size=(batch_sz, 1000), device=device)
     # sudo_results = torch.randint(10000, size=(batch_sz, 800), device=device)
     # sudo_discuss = torch.randint(10000, size=(batch_sz, 800), device=device)
     sudo_label = torch.randint(2, size=(batch_sz, num_label), device=device).type(torch.float)
