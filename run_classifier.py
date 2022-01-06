@@ -77,7 +77,7 @@ def generate_batch(batch):
     # intro = [torch.tensor(convert_text_tokens(entry[2])) for entry in batch]
     # intro = pad_sequence(intro, ksz=3, batch_first=True)
 
-    method = [torch.tensor(convert_text_tokens(entry[3])) for entry in batch]
+    method = [torch.tensor(convert_text_tokens(entry[2])) for entry in batch]
     method = pad_sequence(method, ksz=3, batch_first=True)
 
     # result = [torch.tensor(convert_text_tokens(entry[4])) for entry in batch]
