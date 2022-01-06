@@ -279,7 +279,7 @@ if __name__ == "__main__":
     sudo_label = torch.randint(2, size=(args.batch_sz, num_nodes)).type(torch.float)
 
     from torchsummary import summary
-    summary(model, sudo_abstract, sudo_intro, sudo_method, sudo_results, sudo_discuss, G, G.ndata['feat'])
+    summary(model, [sudo_abstract, sudo_intro, sudo_method, sudo_results, sudo_discuss, G, G.ndata['feat']])
     # model.cuda()
     #
     # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
