@@ -11,6 +11,7 @@ from torchtext.data.utils import get_tokenizer
 from torchtext.data.utils import ngrams_iterator
 from torchtext.vocab import Vectors
 from torchtext.vocab import build_vocab_from_iterator
+import pickle
 
 from model import multichannel_GCN_title_abstract
 from pytorchtools import EarlyStopping
@@ -198,6 +199,8 @@ if __name__ == "__main__":
     parser.add_argument('--graph')
     parser.add_argument('--save-model-path')
     parser.add_argument('--model')
+    parser.add_argument('--true')
+    parser.add_argument('--results')
 
     parser.add_argument('--device', default='cuda', type=str)
     parser.add_argument('--embedding_dim', type=int, default=200)
@@ -288,13 +291,17 @@ if __name__ == "__main__":
 
     # training
     # print("Start training!")
-    # def convert_text_tokens(text): return [vocab[token] for token in text]
+    def convert_text_tokens(text): return [vocab[token] for token in text]
     # model, train_loss, valid_loss = train(train_dataset, dev_dataset, model, mlb, G, args.batch_sz, args.num_epochs,
     #                                       criterion, device, args.num_workers, optimizer, lr_scheduler)
     # print('Finish training!')
 
     # testing
     pred, true_label = test(test_dataset, model, mlb, G, args.batch_sz, device)
+
+    # save
+    pickle.dump(pred, open(args.results, 'wb'))
+    pickle.dump(true_label, open(args.true, 'wb'))
 
     print('save model for inference')
     torch.save(model.state_dict(), args.save_model_path)
