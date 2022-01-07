@@ -236,8 +236,8 @@ if __name__ == "__main__":
     # }
     NUM_LINES = {
         'all': 765920,
-        'train': 100000,
-        'dev': 1900,
+        'train': 765920,
+        'dev': 95737,
         'test': 60000
     }
     print('load and prepare Mesh')
@@ -265,20 +265,20 @@ if __name__ == "__main__":
     G = dgl.load_graphs(args.graph)[0][0]
     print('graph', G.ndata['feat'].shape)
 
-    # train_iterator = _RawTextIterableDataset(NUM_LINES['train'], 500000, _create_data_from_csv_abstract(args.train_path))
-    # dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], 60000, _create_data_from_csv_abstract(args.dev_path))
-    # train_dataset = to_map_style_dataset(train_iterator)
-    # dev_dataset = to_map_style_dataset(dev_iterator)
-    test_iterator = _RawTextIterableDataset(NUM_LINES['test'], None, _create_data_from_csv_abstract(args.test_path))
-    test_dataset = to_map_style_dataset(test_iterator)
+    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], 500000, _create_data_from_csv_abstract(args.train_path))
+    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], 60000, _create_data_from_csv_abstract(args.dev_path))
+    train_dataset = to_map_style_dataset(train_iterator)
+    dev_dataset = to_map_style_dataset(dev_iterator)
+    # test_iterator = _RawTextIterableDataset(NUM_LINES['test'], None, _create_data_from_csv_abstract(args.test_path))
+    # test_dataset = to_map_style_dataset(test_iterator)
     model = multichannel_GCN_title_abstract(vocab_size, args.dropout, args.ksz, num_nodes)
     model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
 
-    # model.cuda()
+    model.cuda()
 
-    # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.scheduler_step_sz, gamma=args.lr_gamma)
-    # criterion = nn.BCEWithLogitsLoss().cuda()
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.scheduler_step_sz, gamma=args.lr_gamma)
+    criterion = nn.BCEWithLogitsLoss().cuda()
 
     # pre-allocate GPU memory
     #preallocate_gpu_memory(G, model, args.batch_sz, device, num_nodes, criterion)
@@ -290,18 +290,18 @@ if __name__ == "__main__":
     model.eval()
 
     # training
-    # print("Start training!")
+    print("Start training!")
     def convert_text_tokens(text): return [vocab[token] for token in text]
-    # model, train_loss, valid_loss = train(train_dataset, dev_dataset, model, mlb, G, args.batch_sz, args.num_epochs,
-    #                                       criterion, device, args.num_workers, optimizer, lr_scheduler)
-    # print('Finish training!')
+    model, train_loss, valid_loss = train(train_dataset, dev_dataset, model, mlb, G, args.batch_sz, args.num_epochs,
+                                          criterion, device, args.num_workers, optimizer, lr_scheduler)
+    print('Finish training!')
 
     # testing
-    pred, true_label = test(test_dataset, model, mlb, G, args.batch_sz, device)
+    # pred, true_label = test(test_dataset, model, mlb, G, args.batch_sz, device)
 
     # save
-    pickle.dump(pred, open(args.results, 'wb'))
-    pickle.dump(true_label, open(args.true, 'wb'))
+    # pickle.dump(pred, open(args.results, 'wb'))
+    # pickle.dump(true_label, open(args.true, 'wb'))
 
     print('save model for inference')
     torch.save(model.state_dict(), args.save_model_path)
