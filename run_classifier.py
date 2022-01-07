@@ -203,6 +203,7 @@ if __name__ == "__main__":
     parser.add_argument('--meSH_pair_path')
     parser.add_argument('--graph')
     parser.add_argument('--save-model-path')
+    parser.add_argument('--model')
 
     parser.add_argument('--device', default='cuda', type=str)
     parser.add_argument('--embedding_dim', type=int, default=200)
@@ -278,15 +279,20 @@ if __name__ == "__main__":
     print('embedding')
     model.embedding_layer.weight.data.copy_(weight_matrix(vocab, vectors)).cuda()
 
-    model.cuda()
+    # model.cuda()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.scheduler_step_sz, gamma=args.lr_gamma)
     criterion = nn.BCEWithLogitsLoss().cuda()
 
     # pre-allocate GPU memory
-    preallocate_gpu_memory(G, model, args.batch_sz, device, num_nodes, criterion)
-    print('pre-allocated GPU done')
+    # preallocate_gpu_memory(G, model, args.batch_sz, device, num_nodes, criterion)
+    # print('pre-allocated GPU done')
+
+    # load model
+    model.load_state_dict(torch.load(args.model))
+    model.to(device)
+    model.train()
 
     # training
     print("Start training!")

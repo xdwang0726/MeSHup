@@ -287,7 +287,7 @@ if __name__ == "__main__":
     # load model
     model.load_state_dict(torch.load(args.model))
     model.to(device)
-    model.eval()
+    model.train()
 
     # training
     print("Start training!")
