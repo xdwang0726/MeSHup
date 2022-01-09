@@ -239,8 +239,8 @@ if __name__ == "__main__":
     # }
     NUM_LINES = {
         'all': 765920,
-        'train': 700000,
-        'dev': 90000,
+        'train': 765920,
+        'dev': 95737,
         'test': 95769
     }
     print('load and prepare Mesh')
@@ -269,8 +269,8 @@ if __name__ == "__main__":
     G = dgl.load_graphs(args.graph)[0][0]
     print('graph', G.ndata['feat'].shape)
 
-    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], 500000, _create_data_from_csv(args.train_path))
-    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], 67500, _create_data_from_csv(args.dev_path))
+    train_iterator = _RawTextIterableDataset(NUM_LINES['train'], 700000, _create_data_from_csv(args.train_path))
+    dev_iterator = _RawTextIterableDataset(NUM_LINES['dev'], 90000, _create_data_from_csv(args.dev_path))
     print('Loading the training set')
     train_dataset = to_map_style_dataset(train_iterator)
     print('Loading the dev set')
