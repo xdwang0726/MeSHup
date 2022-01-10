@@ -111,14 +111,14 @@ def main():
     T_score = np.concatenate(T_score, axis=0)
     threshold = np.array([0.000005] * 28470)
 
-    test_labelsIndex = getLabelIndex(T_score)
-    precisions = precision_at_ks(P_score, test_labelsIndex, ks=[1, 3, 5, 10, 15])
-    print('p@k', sum(precisions[0][0])/len(precisions[0][0]), sum(precisions[0][1])/len(precisions[0][1]),
-          sum(precisions[0][2])/len(precisions[0][2]), sum(precisions[0][3])/len(precisions[0][3]), sum(precisions[0][4])/len(precisions[0][4]))
-    print('r@k', sum(precisions[1][0])/len(precisions[1][0]), sum(precisions[1][1])/len(precisions[1][1]),
-          sum(precisions[1][2])/len(precisions[1][2]), sum(precisions[1][3])/len(precisions[1][3]), sum(precisions[1][4])/len(precisions[1][4]))
+    # test_labelsIndex = getLabelIndex(T_score)
+    # precisions = precision_at_ks(P_score, test_labelsIndex, ks=[1, 3, 5, 10, 15])
+    # print('p@k', sum(precisions[0][0])/len(precisions[0][0]), sum(precisions[0][1])/len(precisions[0][1]),
+    #       sum(precisions[0][2])/len(precisions[0][2]), sum(precisions[0][3])/len(precisions[0][3]), sum(precisions[0][4])/len(precisions[0][4]))
+    # print('r@k', sum(precisions[1][0])/len(precisions[1][0]), sum(precisions[1][1])/len(precisions[1][1]),
+    #       sum(precisions[1][2])/len(precisions[1][2]), sum(precisions[1][3])/len(precisions[1][3]), sum(precisions[1][4])/len(precisions[1][4]))
 
-    ebp, ebr, ebf = example_based_evaluation(P_score, T_score, threshold)
+    ebp, ebr, ebf = example_based_evaluation(P_score, T_score, threshold, 95769)
     print('emp, ebr, ebf', ebp, ebr, ebf)
 
     MiF, MiP, MiR, MaF, MaP, MaR = micro_macro_eval(P_score, T_score, threshold)
