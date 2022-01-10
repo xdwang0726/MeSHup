@@ -162,8 +162,7 @@ def test(test_dataset, model, mlb, G, batch_sz, device):
     with torch.no_grad():
         model.eval()
         for label, abstract in test_data:
-            label = torch.from_numpy(mlb.fit_transform(label)).type(torch.float)
-            label = label.to(device)
+            label = mlb.fit_transform(label)
 
             abstract = abstract.to(device)
             G, G.ndata['feat'] = G.to(device), G.ndata['feat'].to(device)
