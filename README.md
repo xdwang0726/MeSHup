@@ -1,7 +1,7 @@
 # MeSHup: Corpus for Full Text Biomedical Document Indexing
 Medical Subject Heading (MeSH) indexing refers to the problem of assigning each given biomedical document with the most relevant labels from an extremely large set of MeSH terms. Currently, the vast number of biomedical articles in the PubMed database are manually annotated by human curators, which is time consuming and costly; therefore, a computational system that can assist the indexing is highly valuable. When developing supervised MeSH indexing systems, the availability of a large-scale annotated text corpus is desirable. A publicly available, large corpus that permits robust  evaluation and comparison of various systems is important to the research community. We release a large scale annotated MeSH indexing corpus, MeSHup, which contains 1,342,667 full text articles, associated MeSH labels and metadata, such authors and publish venues, that are collected from the MEDLINE database. We train a end-to-end model that combines features from  documents  and their associated labels on our corpus and report the new baseline.
 ## Download Dataset
-
+https://drive.google.com/file/d/19jKjLCcTD1CGE98uJtzxdoorueT7ITfM/view?usp=sharing
 ## Required Packages
 - Python 3.7
 - numpy==1.11.1
